@@ -8,1721 +8,1352 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --navy: #0f2044;
-    --blue: #1a4fa0;
-    --blue-mid: #2563eb;
-    --blue-light: #dbeafe;
-    --accent: #f59e0b;
-    --accent-light: #fef3c7;
-    --green: #10b981;
-    --green-light: #d1fae5;
-    --red: #ef4444;
-    --red-light: #fee2e2;
-    --orange: #f97316;
-    --orange-light: #ffedd5;
-    --gray-50: #f8fafc;
-    --gray-100: #f1f5f9;
-    --gray-200: #e2e8f0;
-    --gray-300: #cbd5e1;
-    --gray-400: #94a3b8;
-    --gray-500: #64748b;
-    --gray-600: #475569;
-    --gray-700: #334155;
-    --gray-800: #1e293b;
-    --gray-900: #0f172a;
-    --white: #ffffff;
-    --sidebar-w: 240px;
-    --header-h: 60px;
-    --shadow-sm: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04);
-    --shadow: 0 4px 12px rgba(0,0,0,.1);
-    --shadow-lg: 0 12px 32px rgba(0,0,0,.15);
-    --radius: 10px;
-    --radius-sm: 6px;
-  }
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'DM Sans', sans-serif; background: var(--gray-50); color: var(--gray-800); font-size: 14px; }
-  
-  /* ───── UPLOAD SCREEN ───── */
-  #uploadScreen {
-    min-height: 100vh; display: flex; align-items: center; justify-content: center;
-    background: linear-gradient(135deg, #0f2044 0%, #1a4fa0 60%, #2563eb 100%);
-    position: relative; overflow: hidden;
-  }
-  #uploadScreen::before {
-    content: ''; position: absolute; inset: 0;
-    background: radial-gradient(ellipse at 70% 30%, rgba(245,158,11,.12) 0%, transparent 60%),
-                radial-gradient(ellipse at 20% 80%, rgba(16,185,129,.08) 0%, transparent 50%);
-  }
-  .upload-card {
-    background: rgba(255,255,255,.97); border-radius: 20px; padding: 56px 64px;
-    box-shadow: 0 32px 80px rgba(0,0,0,.28); max-width: 520px; width: 90%;
-    text-align: center; position: relative; z-index: 1;
-  }
-  .upload-card .logo {
-    font-size: 13px; font-weight: 600; letter-spacing: 2px; color: var(--blue);
-    text-transform: uppercase; margin-bottom: 8px;
-  }
-  .upload-card h1 { font-size: 26px; font-weight: 700; color: var(--navy); line-height: 1.3; margin-bottom: 8px; }
-  .upload-card p { color: var(--gray-500); font-size: 14px; margin-bottom: 36px; line-height: 1.6; }
-  .drop-zone {
-    border: 2px dashed var(--gray-300); border-radius: var(--radius); padding: 36px 24px;
-    cursor: pointer; transition: all .2s; background: var(--gray-50); margin-bottom: 20px;
-  }
-  .drop-zone:hover, .drop-zone.drag-over {
-    border-color: var(--blue-mid); background: var(--blue-light);
-  }
-  .drop-zone .icon { font-size: 40px; margin-bottom: 12px; }
-  .drop-zone p { color: var(--gray-500); font-size: 13px; }
-  .drop-zone strong { color: var(--blue-mid); }
-  .btn-upload {
-    background: var(--blue-mid); color: var(--white); border: none; border-radius: var(--radius-sm);
-    padding: 12px 32px; font-size: 14px; font-weight: 600; cursor: pointer;
-    font-family: inherit; width: 100%; transition: background .15s;
-  }
-  .btn-upload:hover { background: var(--blue); }
-  #fileInput { display: none; }
-  .upload-hint { font-size: 12px; color: var(--gray-400); margin-top: 12px; }
+:root {
+  --navy:#0f2044;--blue:#1a4fa0;--bm:#2563eb;--bl:#dbeafe;--bxl:#eff6ff;
+  --green:#10b981;--gl:#d1fae5;--gxl:#ecfdf5;
+  --red:#ef4444;--rl:#fee2e2;--rxl:#fff1f2;
+  --org:#f97316;--orl:#ffedd5;
+  --amb:#f59e0b;--aml:#fef3c7;
+  --pur:#8b5cf6;--pul:#ede9fe;
+  --teal:#0d9488;--tll:#ccfbf1;
+  --g50:#f8fafc;--g100:#f1f5f9;--g200:#e2e8f0;--g300:#cbd5e1;
+  --g400:#94a3b8;--g500:#64748b;--g600:#475569;--g700:#334155;
+  --g800:#1e293b;--g900:#0f172a;--w:#fff;
+  --sw:240px;--hh:60px;--r:10px;--rs:6px;
+  --s0:0 1px 2px rgba(0,0,0,.06);--s1:0 1px 3px rgba(0,0,0,.1),0 1px 2px rgba(0,0,0,.06);
+  --s2:0 4px 6px rgba(0,0,0,.07),0 2px 4px rgba(0,0,0,.06);
+  --s3:0 10px 25px rgba(0,0,0,.12),0 4px 10px rgba(0,0,0,.08);
+  --sl:0 20px 40px rgba(0,0,0,.16),0 8px 16px rgba(0,0,0,.1);
+  --ease:cubic-bezier(.4,0,.2,1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'DM Sans',sans-serif;background:var(--g50);color:var(--g800);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--g200);border-radius:3px}::-webkit-scrollbar-thumb:hover{background:var(--g300)}
 
-  /* ───── APP SHELL ───── */
-  #appShell { display: none; min-height: 100vh; }
+/* SIDEBAR */
+.sidebar{position:fixed;left:0;top:0;bottom:0;width:var(--sw);background:var(--navy);display:flex;flex-direction:column;z-index:100;overflow-y:auto}
+.sb-brand{padding:18px 20px 14px;border-bottom:1px solid rgba(255,255,255,.08);flex-shrink:0}
+.sb-brand .bl{font-size:10px;font-weight:600;letter-spacing:2px;color:var(--amb);text-transform:uppercase;margin-bottom:2px}
+.sb-brand .bn{font-size:15px;font-weight:700;color:#fff}.sb-brand .bs{font-size:11px;color:rgba(255,255,255,.36)}
+.sb-nav{flex:1;padding:12px 10px 6px}
+.nav-sec{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.26);padding:10px 8px 3px;margin-top:4px}
+.nav-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:var(--rs);cursor:pointer;color:rgba(255,255,255,.56);font-size:13px;font-weight:500;transition:all .18s var(--ease);margin-bottom:1px;user-select:none}
+.nav-item:hover{background:rgba(255,255,255,.08);color:#fff}
+.nav-item.active{background:var(--bm);color:#fff;box-shadow:0 2px 8px rgba(37,99,235,.4)}
+.nav-item .ni{font-size:14px;width:17px;text-align:center;flex-shrink:0}
+.nbd{margin-left:auto;border-radius:10px;padding:2px 6px;font-size:10px;font-weight:700;background:var(--amb);color:var(--navy);flex-shrink:0}
+.nbd.g{background:var(--green)!important;color:#fff!important}.nbd.r{background:var(--red)!important;color:#fff!important}
+.nbd.p{background:var(--pur)!important;color:#fff!important}
+.sb-hist{padding:8px 10px 4px;border-top:1px solid rgba(255,255,255,.06);flex-shrink:0}
+.sb-hist-t{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.24);padding:0 8px 5px}
+.hi{padding:5px 8px;border-radius:var(--rs);cursor:pointer;transition:background .18s}
+.hi:hover{background:rgba(255,255,255,.06)}
+.hi .hn{font-size:11px;color:rgba(255,255,255,.5);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px}
+.hi .hm{font-size:10px;color:rgba(255,255,255,.24);margin-top:1px}
+.sb-foot{padding:9px 16px 11px;border-top:1px solid rgba(255,255,255,.06);font-size:11px;color:rgba(255,255,255,.26);flex-shrink:0;line-height:1.7}
 
-  /* Sidebar */
-  .sidebar {
-    position: fixed; left: 0; top: 0; bottom: 0; width: var(--sidebar-w);
-    background: var(--navy); display: flex; flex-direction: column; z-index: 100;
-  }
-  .sidebar-brand {
-    padding: 20px 20px 16px; border-bottom: 1px solid rgba(255,255,255,.08);
-  }
-  .sidebar-brand .brand-label {
-    font-size: 10px; font-weight: 600; letter-spacing: 2px; color: var(--accent);
-    text-transform: uppercase; margin-bottom: 4px;
-  }
-  .sidebar-brand .brand-name { font-size: 16px; font-weight: 700; color: var(--white); }
-  .sidebar-brand .brand-sub { font-size: 11px; color: rgba(255,255,255,.45); }
-  .sidebar-nav { flex: 1; padding: 16px 12px; overflow-y: auto; }
-  .nav-section-label {
-    font-size: 10px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase;
-    color: rgba(255,255,255,.3); padding: 8px 8px 4px; margin-top: 8px;
-  }
-  .nav-item {
-    display: flex; align-items: center; gap: 10px; padding: 9px 10px;
-    border-radius: var(--radius-sm); cursor: pointer; color: rgba(255,255,255,.6);
-    font-size: 13px; font-weight: 500; transition: all .15s; margin-bottom: 2px;
-  }
-  .nav-item:hover { background: rgba(255,255,255,.07); color: var(--white); }
-  .nav-item.active { background: var(--blue-mid); color: var(--white); }
-  .nav-item .nav-icon { font-size: 16px; width: 20px; text-align: center; }
-  .nav-item .nav-badge {
-    margin-left: auto; background: var(--accent); color: var(--navy);
-    font-size: 10px; font-weight: 700; border-radius: 10px; padding: 2px 7px;
-  }
-  .sidebar-footer {
-    padding: 16px 20px; border-top: 1px solid rgba(255,255,255,.08);
-    font-size: 11px; color: rgba(255,255,255,.3);
-  }
+/* HEADER */
+.main-header{position:fixed;left:var(--sw);right:0;top:0;height:var(--hh);background:var(--w);border-bottom:1px solid var(--g200);display:flex;align-items:center;padding:0 20px;gap:8px;z-index:90;box-shadow:var(--s1)}
+.h-title{font-size:15px;font-weight:600;color:var(--g800);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.h-ctrl{display:flex;align-items:center;gap:7px;flex-shrink:0}
+.sel{border:1px solid var(--g200);border-radius:var(--rs);padding:6px 8px;font-family:inherit;font-size:12px;color:var(--g700);background:var(--w);cursor:pointer;outline:none;transition:border-color .18s}
+.sel:focus{border-color:var(--bm);box-shadow:0 0 0 3px rgba(37,99,235,.08)}
 
-  /* Header */
-  .main-header {
-    position: fixed; left: var(--sidebar-w); right: 0; top: 0; height: var(--header-h);
-    background: var(--white); border-bottom: 1px solid var(--gray-200);
-    display: flex; align-items: center; padding: 0 24px; gap: 16px; z-index: 90;
-    box-shadow: var(--shadow-sm);
-  }
-  .header-title { font-size: 16px; font-weight: 600; color: var(--gray-800); flex: 1; }
-  .header-controls { display: flex; align-items: center; gap: 10px; }
-  .month-select {
-    border: 1px solid var(--gray-200); border-radius: var(--radius-sm); padding: 7px 10px;
-    font-family: inherit; font-size: 13px; color: var(--gray-700); background: var(--white);
-    cursor: pointer; outline: none;
-  }
-  .month-select:focus { border-color: var(--blue-mid); }
-  .btn {
-    border: none; border-radius: var(--radius-sm); padding: 8px 16px; font-family: inherit;
-    font-size: 13px; font-weight: 600; cursor: pointer; transition: all .15s; display: inline-flex;
-    align-items: center; gap: 6px;
-  }
-  .btn-primary { background: var(--blue-mid); color: var(--white); }
-  .btn-primary:hover { background: var(--blue); }
-  .btn-secondary { background: var(--gray-100); color: var(--gray-700); border: 1px solid var(--gray-200); }
-  .btn-secondary:hover { background: var(--gray-200); }
-  .btn-success { background: var(--green); color: var(--white); }
-  .btn-success:hover { background: #059669; }
-  .btn-danger { background: var(--red); color: var(--white); }
-  .btn-danger:hover { background: #dc2626; }
-  .btn-sm { padding: 5px 12px; font-size: 12px; }
+/* MAIN */
+.main-content{margin-left:var(--sw);margin-top:var(--hh);padding:20px;min-height:calc(100vh - var(--hh))}
+.view{display:none;animation:fup .2s var(--ease)}.view.active{display:block}
+@keyframes fup{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 
-  /* Main Content */
-  .main-content {
-    margin-left: var(--sidebar-w); margin-top: var(--header-h);
-    padding: 24px; min-height: calc(100vh - var(--header-h));
-  }
+/* BUTTONS */
+.btn{border:none;border-radius:var(--rs);padding:7px 14px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:all .18s var(--ease);display:inline-flex;align-items:center;gap:5px;white-space:nowrap;user-select:none}
+.btn:active{transform:scale(.97)}
+.btn-p{background:var(--bm);color:#fff}.btn-p:hover{background:var(--blue);box-shadow:0 3px 10px rgba(37,99,235,.35)}
+.btn-s{background:var(--g100);color:var(--g700);border:1px solid var(--g200)}.btn-s:hover{background:var(--g200)}
+.btn-ok{background:var(--green);color:#fff}.btn-ok:hover{background:#059669}
+.btn-sm{padding:4px 10px;font-size:11px}
 
-  /* Views */
-  .view { display: none; }
-  .view.active { display: block; }
+/* Upload onboard banner */
+.onboard-banner{background:linear-gradient(135deg,var(--bxl) 0%,#f0f7ff 100%);border:1px solid var(--bl);border-left:4px solid var(--bm);border-radius:var(--r);padding:14px 18px;margin-bottom:18px;display:flex;align-items:center;gap:14px;box-shadow:var(--s0)}
+.ob-icon{font-size:28px;flex-shrink:0}
+.ob-body{flex:1;min-width:0}
+.ob-title{font-size:13px;font-weight:700;color:var(--navy);margin-bottom:2px}
+.ob-sub{font-size:12px;color:var(--g500);line-height:1.5}
+.ob-tip{position:relative;display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--bm);cursor:help;margin-left:8px;font-weight:500}
+.ob-tip:hover .ob-tipbox{opacity:1;pointer-events:auto}
+.ob-tipbox{position:absolute;bottom:130%;left:0;background:var(--g800);color:#fff;border-radius:6px;padding:8px 12px;font-size:11px;z-index:500;opacity:0;pointer-events:none;transition:opacity .15s;box-shadow:var(--s2);line-height:1.6;white-space:nowrap;min-width:220px}
+.ob-tipbox::after{content:'';position:absolute;top:100%;left:16px;border:5px solid transparent;border-top-color:var(--g800)}
+/* skeleton stat cards for no-data state */
+.stat-card.skeleton .sv{color:var(--g200);background:var(--g100);border-radius:4px;display:inline-block;min-width:32px}
+.stat-card.skeleton .ss{color:var(--g200)}
+/* chart empty placeholder */
+.chart-ph{display:flex;align-items:center;justify-content:center;height:100%;color:var(--g300);font-size:12px;flex-direction:column;gap:6px}
+.chart-ph span{font-size:26px}
 
-  /* Stat Cards */
-  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
-  .stat-card {
-    background: var(--white); border-radius: var(--radius); padding: 20px;
-    box-shadow: var(--shadow-sm); border-left: 4px solid transparent;
-    transition: box-shadow .15s;
-  }
-  .stat-card:hover { box-shadow: var(--shadow); }
-  .stat-card.blue { border-left-color: var(--blue-mid); }
-  .stat-card.green { border-left-color: var(--green); }
-  .stat-card.red { border-left-color: var(--red); }
-  .stat-card.orange { border-left-color: var(--orange); }
-  .stat-card.amber { border-left-color: var(--accent); }
-  .stat-label { font-size: 11px; font-weight: 600; letter-spacing: .8px; text-transform: uppercase; color: var(--gray-400); margin-bottom: 8px; }
-  .stat-value { font-size: 28px; font-weight: 700; color: var(--gray-800); line-height: 1; }
-  .stat-sub { font-size: 12px; color: var(--gray-400); margin-top: 4px; }
-  .stat-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 500; }
-  .stat-badge.up { color: var(--green); }
-  .stat-badge.down { color: var(--red); }
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin-bottom:16px}
+.stat-card{background:var(--w);border-radius:var(--r);padding:16px 18px;box-shadow:var(--s1);border-left:4px solid transparent;transition:all .18s var(--ease);position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;right:-10px;top:-10px;width:65px;height:65px;border-radius:50%;opacity:.07}
+.stat-card:hover{box-shadow:var(--s2);transform:translateY(-2px)}
+.stat-card.bl{border-left-color:var(--bm)}.stat-card.bl::before{background:var(--bm)}
+.stat-card.gr{border-left-color:var(--green)}.stat-card.gr::before{background:var(--green)}
+.stat-card.re{border-left-color:var(--red)}.stat-card.re::before{background:var(--red)}
+.stat-card.or{border-left-color:var(--org)}.stat-card.or::before{background:var(--org)}
+.stat-card.am{border-left-color:var(--amb)}.stat-card.am::before{background:var(--amb)}
+.stat-card.pu{border-left-color:var(--pur)}.stat-card.pu::before{background:var(--pur)}
+.stat-card.te{border-left-color:var(--teal)}.stat-card.te::before{background:var(--teal)}
+.sl{font-size:10px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:var(--g400);margin-bottom:6px}
+.sv{font-size:24px;font-weight:700;color:var(--g800);line-height:1;font-variant-numeric:tabular-nums}
+.ss{font-size:11px;color:var(--g400);margin-top:3px}
 
-  /* Charts row */
-  .charts-row { display: grid; grid-template-columns: 1fr 1fr 1.5fr; gap: 16px; margin-bottom: 24px; }
-  .chart-card {
-    background: var(--white); border-radius: var(--radius); padding: 20px;
-    box-shadow: var(--shadow-sm);
-  }
-  .chart-card h3 { font-size: 13px; font-weight: 600; color: var(--gray-600); margin-bottom: 16px; letter-spacing: .3px; }
-  .chart-wrap { position: relative; }
+/* CHARTS */
+.charts-row{display:grid;grid-template-columns:1fr 1fr 1.5fr;gap:12px;margin-bottom:16px}
+.chart-card{background:var(--w);border-radius:var(--r);padding:16px 18px;box-shadow:var(--s1)}
+.chart-card h3{font-size:10px;font-weight:700;color:var(--g400);margin-bottom:10px;letter-spacing:.5px;text-transform:uppercase}
 
-  /* Department Cards */
-  .dept-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
-  .dept-card {
-    background: var(--white); border-radius: var(--radius); padding: 16px;
-    box-shadow: var(--shadow-sm); cursor: pointer; transition: all .15s; border: 2px solid transparent;
-  }
-  .dept-card:hover, .dept-card.active { border-color: var(--blue-mid); box-shadow: 0 0 0 3px rgba(37,99,235,.1); }
-  .dept-card .dept-name { font-size: 13px; font-weight: 700; color: var(--navy); margin-bottom: 2px; }
-  .dept-card .dept-full { font-size: 11px; color: var(--gray-400); margin-bottom: 12px; }
-  .dept-progress { height: 6px; background: var(--gray-100); border-radius: 3px; overflow: hidden; margin-bottom: 8px; }
-  .dept-progress-fill { height: 100%; border-radius: 3px; transition: width .5s ease; }
-  .dept-stats { display: flex; justify-content: space-between; font-size: 11px; color: var(--gray-500); }
-  .dept-stats strong { color: var(--gray-800); }
+/* DEPT CARDS */
+.dept-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.dept-card{background:var(--w);border-radius:var(--r);padding:14px;box-shadow:var(--s1);cursor:pointer;transition:all .18s var(--ease);border:2px solid transparent}
+.dept-card:hover{transform:translateY(-2px);box-shadow:var(--s2)}
+.dept-card.active{border-color:var(--bm);box-shadow:0 0 0 4px rgba(37,99,235,.1)}
+.dc-nm{font-size:13px;font-weight:700;color:var(--navy)}.dc-fl{font-size:11px;color:var(--g400);margin-bottom:8px}
+.dp{height:5px;background:var(--g100);border-radius:3px;overflow:hidden;margin-bottom:6px}
+.dpf{height:100%;border-radius:3px;transition:width .7s var(--ease)}
+.dc-st{display:flex;justify-content:space-between;font-size:11px;color:var(--g500)}.dc-st strong{color:var(--g800)}
 
-  /* Table */
-  .table-card {
-    background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow-sm);
-    overflow: hidden;
-  }
-  .table-toolbar {
-    padding: 16px 20px; border-bottom: 1px solid var(--gray-100);
-    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-  }
-  .table-toolbar h3 { font-size: 14px; font-weight: 600; color: var(--gray-800); flex: 1; min-width: 160px; }
-  .search-box {
-    border: 1px solid var(--gray-200); border-radius: var(--radius-sm); padding: 7px 12px;
-    font-family: inherit; font-size: 13px; outline: none; width: 220px;
-  }
-  .search-box:focus { border-color: var(--blue-mid); }
-  .filter-select {
-    border: 1px solid var(--gray-200); border-radius: var(--radius-sm); padding: 7px 10px;
-    font-family: inherit; font-size: 13px; outline: none; background: var(--white);
-  }
-  .table-wrap { overflow-x: auto; max-height: 520px; overflow-y: auto; }
-  table { width: 100%; border-collapse: collapse; }
-  thead th {
-    background: var(--gray-50); padding: 10px 14px; text-align: left;
-    font-size: 11px; font-weight: 600; color: var(--gray-500); letter-spacing: .5px;
-    text-transform: uppercase; border-bottom: 1px solid var(--gray-200);
-    position: sticky; top: 0; z-index: 1; white-space: nowrap;
-  }
-  tbody tr { border-bottom: 1px solid var(--gray-100); transition: background .1s; }
-  tbody tr:hover { background: var(--gray-50); }
-  tbody td { padding: 10px 14px; font-size: 13px; color: var(--gray-700); white-space: nowrap; }
-  tbody td:first-child { font-weight: 500; color: var(--gray-900); max-width: 180px; overflow: hidden; text-overflow: ellipsis; }
-  .table-footer { padding: 12px 20px; border-top: 1px solid var(--gray-100); font-size: 12px; color: var(--gray-400); display: flex; justify-content: space-between; align-items: center; }
+/* TABLE */
+.table-card{background:var(--w);border-radius:var(--r);box-shadow:var(--s1);overflow:hidden}
+.t-tb{padding:11px 15px;border-bottom:1px solid var(--g100);display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--w)}
+.t-tb h3{font-size:13px;font-weight:600;color:var(--g800);flex:1;min-width:100px}
+.srch{border:1px solid var(--g200);border-radius:var(--rs);padding:6px 10px;font-family:inherit;font-size:12px;outline:none;width:180px;transition:all .18s}
+.srch:focus{border-color:var(--bm);box-shadow:0 0 0 3px rgba(37,99,235,.08);width:210px}
+.fsel{border:1px solid var(--g200);border-radius:var(--rs);padding:6px 8px;font-family:inherit;font-size:12px;color:var(--g700);background:var(--w);outline:none;transition:border-color .18s}
+.fsel:focus{border-color:var(--bm)}
+.t-wrap{overflow-x:auto;max-height:490px;overflow-y:auto}
+table{width:100%;border-collapse:collapse}
+thead th{background:var(--g50);padding:8px 11px;text-align:left;font-size:10px;font-weight:700;color:var(--g500);letter-spacing:.6px;text-transform:uppercase;border-bottom:1px solid var(--g200);position:sticky;top:0;z-index:2;white-space:nowrap;user-select:none}
+tbody tr{border-bottom:1px solid var(--g100);transition:background .1s}
+tbody tr:hover{background:var(--g50)}
+tbody tr.row-m{background:rgba(245,158,11,.05)}
+tbody tr.row-r{background:rgba(239,68,68,.04)}
+tbody td{padding:7px 11px;font-size:12px;color:var(--g700);vertical-align:middle}
+.t-ft{padding:9px 15px;border-top:1px solid var(--g100);font-size:11px;color:var(--g400);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px}
 
-  /* Badges */
-  .badge {
-    display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 20px;
-    font-size: 11px; font-weight: 600; letter-spacing: .2px;
-  }
-  .badge-green { background: var(--green-light); color: #065f46; }
-  .badge-red { background: var(--red-light); color: #991b1b; }
-  .badge-orange { background: var(--orange-light); color: #7c2d12; }
-  .badge-blue { background: var(--blue-light); color: #1e40af; }
-  .badge-amber { background: var(--accent-light); color: #92400e; }
-  .badge-gray { background: var(--gray-100); color: var(--gray-500); }
+/* Resource link */
+.rl{color:var(--bm);font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:4px;transition:color .18s;max-width:175px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:middle}
+.rl:hover{color:var(--blue);text-decoration:underline}
+.rl-ic{font-size:10px;opacity:0;transition:opacity .15s;flex-shrink:0}.rl:hover .rl-ic{opacity:.6}
 
-  .dept-tag {
-    display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 4px;
-    font-size: 11px; font-weight: 700; font-family: 'DM Mono', monospace; letter-spacing: .5px;
-  }
-  .tag-dnet { background: #dbeafe; color: #1d4ed8; }
-  .tag-java { background: #dcfce7; color: #166534; }
-  .tag-ppr { background: #fef3c7; color: #92400e; }
-  .tag-mobl { background: #f3e8ff; color: #6b21a8; }
+/* Remarks */
+.rmk{max-width:195px}
+.rmkt{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:11px;color:var(--g600);cursor:pointer;transition:all .2s}
+.rmkt.exp{-webkit-line-clamp:unset}.rmkt:hover{color:var(--g800)}
 
-  /* Modal */
-  .modal-overlay {
-    position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 200;
-    display: none; align-items: center; justify-content: center; padding: 20px;
-  }
-  .modal-overlay.open { display: flex; }
-  .modal {
-    background: var(--white); border-radius: 14px; width: 100%; max-width: 680px;
-    max-height: 90vh; overflow-y: auto; box-shadow: var(--shadow-lg);
-  }
-  .modal-header {
-    padding: 20px 24px; border-bottom: 1px solid var(--gray-100);
-    display: flex; align-items: center; justify-content: space-between;
-    position: sticky; top: 0; background: var(--white); z-index: 1;
-  }
-  .modal-header h2 { font-size: 16px; font-weight: 700; color: var(--gray-900); }
-  .modal-close { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--gray-400); padding: 4px; border-radius: 4px; }
-  .modal-close:hover { background: var(--gray-100); color: var(--gray-700); }
-  .modal-body { padding: 24px; }
-  .modal-footer { padding: 16px 24px; border-top: 1px solid var(--gray-100); display: flex; gap: 10px; justify-content: flex-end; }
-  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  .form-group { display: flex; flex-direction: column; gap: 6px; }
-  .form-group.full { grid-column: 1 / -1; }
-  .form-label { font-size: 12px; font-weight: 600; color: var(--gray-600); letter-spacing: .3px; }
-  .form-input, .form-select, .form-textarea {
-    border: 1px solid var(--gray-200); border-radius: var(--radius-sm); padding: 8px 12px;
-    font-family: inherit; font-size: 13px; color: var(--gray-800); outline: none;
-    transition: border-color .15s;
-  }
-  .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--blue-mid); }
-  .form-textarea { resize: vertical; min-height: 80px; }
-  .form-section { margin-bottom: 20px; }
-  .form-section-title {
-    font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
-    color: var(--blue-mid); margin-bottom: 14px; padding-bottom: 8px;
-    border-bottom: 1px solid var(--blue-light);
-  }
+/* BADGES */
+.badge{display:inline-flex;align-items:center;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:600;line-height:1.5}
+.bg{background:var(--gl);color:#065f46}.br{background:var(--rl);color:#991b1b}
+.bo{background:var(--orl);color:#7c2d12}.bb{background:var(--bl);color:#1e40af}
+.bam{background:var(--aml);color:#92400e}.bgr{background:var(--g100);color:var(--g500)}
+.bpu{background:var(--pul);color:#5b21b6}.bte{background:var(--tll);color:#115e59}
+.bm{background:#fef9c3;color:#713f12;border:1px solid #fde047}
+.dept-tag{display:inline-flex;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;font-family:'DM Mono',monospace}
+.tdnet{background:var(--bl);color:#1d4ed8}.tjava{background:var(--gl);color:#166534}
+.tppr{background:var(--aml);color:#92400e}.tmobl{background:var(--pul);color:#6b21a8}
 
-  /* Month utilization row */
-  .month-row {
-    display: grid; grid-template-columns: 120px 80px 1fr 1fr; gap: 8px;
-    align-items: center; padding: 8px 0; border-bottom: 1px solid var(--gray-100);
-  }
-  .month-row:last-child { border-bottom: none; }
-  .month-label { font-size: 12px; font-weight: 600; color: var(--gray-600); }
-  .bill-input { font-size: 12px; }
-  .month-row input, .month-row select {
-    border: 1px solid var(--gray-200); border-radius: 4px; padding: 5px 8px;
-    font-family: inherit; font-size: 12px; width: 100%; outline: none;
-  }
-  .month-row input:focus, .month-row select:focus { border-color: var(--blue-mid); }
+/* Bill bar */
+.bbw{width:44px;height:4px;background:var(--g200);border-radius:2px;display:inline-block;vertical-align:middle;margin-right:4px}
+.bbf{height:100%;border-radius:2px;transition:width .4s var(--ease)}
 
-  /* Empty state */
-  .empty-state { text-align: center; padding: 60px 20px; color: var(--gray-400); }
-  .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
-  .empty-state p { font-size: 14px; }
+/* Tooltip inline */
+.tip-wrap{position:relative;display:inline-flex;align-items:center}
+.tip-wrap:hover .tip-box{opacity:1}
+.tip-box{position:absolute;bottom:125%;left:50%;transform:translateX(-50%);background:var(--g800);color:#fff;border-radius:5px;padding:5px 9px;font-size:11px;white-space:nowrap;z-index:500;pointer-events:none;opacity:0;transition:opacity .15s;box-shadow:var(--s2)}
 
-  /* Loading */
-  .loading { text-align: center; padding: 40px; color: var(--gray-500); font-size: 13px; }
-  .spinner {
-    width: 32px; height: 32px; border: 3px solid var(--gray-200);
-    border-top-color: var(--blue-mid); border-radius: 50%; animation: spin .7s linear infinite;
-    margin: 0 auto 12px;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
+/* MODALS */
+.modal-overlay{position:fixed;inset:0;background:rgba(15,32,68,.45);backdrop-filter:blur(2px);z-index:200;display:none;align-items:flex-start;justify-content:center;padding:32px 16px;overflow-y:auto}
+.modal-overlay.open{display:flex;animation:mfade .18s ease}
+@keyframes mfade{from{opacity:0}to{opacity:1}}
+.modal{background:var(--w);border-radius:13px;width:100%;max-width:700px;box-shadow:var(--sl);animation:mslide .2s var(--ease);margin:auto}
+.modal-sm{max-width:460px}
+@keyframes mslide{from{opacity:0;transform:translateY(-10px) scale(.97)}to{opacity:1;transform:none}}
+.m-hd{padding:15px 20px;border-bottom:1px solid var(--g100);display:flex;align-items:center;justify-content:space-between;border-radius:13px 13px 0 0}
+.m-hd h2{font-size:14px;font-weight:700;color:var(--g900)}
+.m-cl{background:none;border:none;font-size:16px;cursor:pointer;color:var(--g400);padding:3px 6px;border-radius:4px;transition:all .18s;line-height:1}
+.m-cl:hover{background:var(--g100);color:var(--g700)}
+.m-bd{padding:18px 20px}.m-ft{padding:12px 20px;border-top:1px solid var(--g100);display:flex;gap:7px;justify-content:flex-end;flex-wrap:wrap}
 
-  /* Add Month Modal */
-  .month-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
-  .month-chip {
-    padding: 6px 14px; border: 1px solid var(--gray-200); border-radius: 20px;
-    font-size: 12px; font-weight: 500; cursor: pointer; transition: all .15s;
-    background: var(--white); color: var(--gray-600);
-  }
-  .month-chip:hover { border-color: var(--blue-mid); color: var(--blue-mid); }
-  .month-chip.selected { background: var(--blue-mid); color: var(--white); border-color: var(--blue-mid); }
-  .month-chip.exists { background: var(--gray-100); color: var(--gray-400); cursor: not-allowed; border-style: dashed; }
+/* Form */
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fi{display:flex;flex-direction:column;gap:4px}.fi.full{grid-column:1/-1}
+.fl{font-size:10px;font-weight:700;color:var(--g600);letter-spacing:.4px;text-transform:uppercase}
+.inp,.fsel-m,.fta{border:1px solid var(--g200);border-radius:var(--rs);padding:6px 9px;font-family:inherit;font-size:13px;color:var(--g800);outline:none;transition:all .18s;width:100%}
+.inp:focus,.fsel-m:focus,.fta:focus{border-color:var(--bm);box-shadow:0 0 0 3px rgba(37,99,235,.08)}
+.inp.invalid{border-color:var(--red)}.fta{resize:vertical;min-height:64px}
+.fsec{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--bm);margin:14px 0 9px;padding-bottom:6px;border-bottom:1px solid var(--bl)}
 
-  /* Billable percent indicator */
-  .bill-bar-wrap { width: 60px; height: 4px; background: var(--gray-200); border-radius: 2px; display: inline-block; vertical-align: middle; margin-right: 6px; }
-  .bill-bar { height: 100%; border-radius: 2px; }
+/* Month rows */
+.mr{display:grid;grid-template-columns:105px 65px 1fr 1fr;gap:4px;align-items:center;padding:5px 0;border-bottom:1px solid var(--g100)}
+.mr:last-child{border-bottom:none}
+.mlbl{font-size:11px;font-weight:600;color:var(--g600)}
+.mr input{border:1px solid var(--g200);border-radius:4px;padding:4px 6px;font-family:inherit;font-size:11px;width:100%;outline:none;transition:border-color .18s}
+.mr input:focus{border-color:var(--bm)}
 
-  /* Responsive */
-  @media (max-width: 1100px) {
-    .charts-row { grid-template-columns: 1fr 1fr; }
-    .charts-row .chart-card:last-child { grid-column: 1 / -1; }
-    .dept-grid { grid-template-columns: repeat(2, 1fr); }
-  }
-  @media (max-width: 768px) {
-    :root { --sidebar-w: 0px; }
-    .sidebar { transform: translateX(-100%); }
-    .charts-row { grid-template-columns: 1fr; }
-    .dept-grid { grid-template-columns: 1fr; }
-    .form-grid { grid-template-columns: 1fr; }
-  }
+/* Upload options */
+.uopts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.uopt{border:2px solid var(--g200);border-radius:var(--r);padding:13px;cursor:pointer;transition:all .18s;text-align:left}
+.uopt:hover,.uopt.selected{border-color:var(--bm);background:var(--bxl)}
+.uopt .uo-ic{font-size:20px;margin-bottom:6px}.uopt .uo-t{font-size:13px;font-weight:600;color:var(--g800)}
+.uopt .uo-d{font-size:11px;color:var(--g500);margin-top:2px;line-height:1.4}
 
-  /* Tooltip */
-  [data-tip] { position: relative; cursor: help; }
-  [data-tip]:hover::after {
-    content: attr(data-tip); position: absolute; bottom: 120%; left: 50%; transform: translateX(-50%);
-    background: var(--gray-800); color: var(--white); border-radius: 4px; padding: 4px 8px;
-    font-size: 11px; white-space: nowrap; z-index: 300; pointer-events: none;
-  }
+/* Merge summary */
+.sum-list{list-style:none;padding:0}
+.sum-list li{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--g100);font-size:13px;color:var(--g700)}
+.sum-list li:last-child{border-bottom:none}
+.sum-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
 
-  /* Pagination */
-  .pagination { display: flex; gap: 4px; align-items: center; }
-  .page-btn {
-    border: 1px solid var(--gray-200); background: var(--white); border-radius: 4px;
-    padding: 4px 10px; font-size: 12px; cursor: pointer; font-family: inherit;
-    color: var(--gray-600); transition: all .1s;
-  }
-  .page-btn:hover, .page-btn.active { background: var(--blue-mid); color: var(--white); border-color: var(--blue-mid); }
-  .page-btn:disabled { opacity: .4; cursor: not-allowed; }
+/* Resign banner */
+.r-banner{border-radius:var(--r);padding:13px 17px;margin-bottom:14px;border-left:4px solid transparent}
+.r-banner strong{font-size:13px}.r-banner p{font-size:12px;margin-top:3px;line-height:1.5}
+
+/* Month chips */
+.mchips{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px}
+.mchip{padding:5px 12px;border:1px solid var(--g200);border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;transition:all .18s;background:var(--w);color:var(--g600)}
+.mchip:hover{border-color:var(--bm);color:var(--bm)}
+.mchip.sel{background:var(--bm);color:#fff;border-color:var(--bm)}
+.mchip.ex{background:var(--g100);color:var(--g400);cursor:not-allowed;border-style:dashed}
+
+/* ── TABLE FOOTER & PAGINATION ── */
+.t-ft{
+  padding:10px 14px 10px 16px;border-top:2px solid var(--g100);
+  background:var(--g50);display:flex;align-items:center;
+  justify-content:space-between;gap:10px;flex-wrap:wrap;
+  position:sticky;bottom:0;z-index:3;
+  box-shadow:0 -1px 0 var(--g200),0 -4px 12px rgba(0,0,0,.04);
+  border-radius:0 0 var(--r) var(--r);
+}
+.pg-info{font-size:11.5px;color:var(--g500);white-space:nowrap;font-variant-numeric:tabular-nums;letter-spacing:.01em}
+.pg-info strong{color:var(--g700);font-weight:600}
+.pg-ctrl{display:flex;align-items:center;gap:3px;flex-wrap:nowrap}
+.pg-b{
+  border:1px solid var(--g200);background:var(--w);border-radius:6px;
+  width:30px;height:30px;font-size:12px;cursor:pointer;padding:0;
+  font-family:inherit;color:var(--g600);transition:all .15s var(--ease);
+  display:inline-flex;align-items:center;justify-content:center;
+  font-weight:500;line-height:1;flex-shrink:0;user-select:none;
+}
+.pg-b.wide{width:auto;padding:0 9px;font-size:11px}
+.pg-b:hover:not(:disabled){background:var(--bxl);border-color:var(--bm);color:var(--bm)}
+.pg-b.active{background:var(--bm);color:#fff;border-color:var(--bm);font-weight:700;box-shadow:0 2px 6px rgba(37,99,235,.28);cursor:default}
+.pg-b:disabled{opacity:.32;cursor:not-allowed;pointer-events:none}
+.pg-sep{width:1px;height:20px;background:var(--g200);margin:0 4px;flex-shrink:0}
+.pg-ellipsis{display:inline-flex;align-items:center;justify-content:center;width:28px;height:30px;color:var(--g400);font-size:13px;user-select:none;letter-spacing:1px}
+.pg-goto{display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--g500);margin-left:2px}
+.pg-goto-inp{
+  width:42px;border:1px solid var(--g200);border-radius:6px;
+  padding:4px 5px;font-family:inherit;font-size:12px;text-align:center;
+  outline:none;transition:all .15s;background:var(--w);color:var(--g800);
+}
+.pg-goto-inp:focus{border-color:var(--bm);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+.pg-goto-inp::-webkit-inner-spin-button,.pg-goto-inp::-webkit-outer-spin-button{-webkit-appearance:none}
+.pg-rpp{display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--g500);padding-left:8px;border-left:1px solid var(--g200);margin-left:4px}
+.pg-rpp-sel{
+  border:1px solid var(--g200);border-radius:6px;padding:4px 22px 4px 7px;
+  font-family:inherit;font-size:12px;color:var(--g700);background:var(--w);
+  outline:none;cursor:pointer;transition:border-color .15s;
+  appearance:none;-webkit-appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2394a3b8' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 6px center;
+}
+.pg-rpp-sel:focus{border-color:var(--bm);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+@media(max-width:900px){.pg-goto,.pg-rpp{display:none}}
+@media(max-width:600px){.pg-info{display:none}.pg-ctrl{width:100%;justify-content:center}}
+
+/* Toast */
+#toast{position:fixed;bottom:24px;right:24px;z-index:999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{background:var(--g800);color:#fff;border-radius:8px;padding:10px 16px;font-size:13px;box-shadow:var(--s3);animation:tin .22s var(--ease);max-width:320px;pointer-events:auto;display:flex;align-items:center;gap:8px}
+.toast.ok{background:#065f46}.toast.err{background:#991b1b}.toast.warn{background:#92400e}
+@keyframes tin{from{opacity:0;transform:translateY(10px) scale(.95)}to{opacity:1;transform:none}}
+
+/* Responsive */
+@media(max-width:1100px){.charts-row{grid-template-columns:1fr 1fr}.charts-row .chart-card:last-child{grid-column:1/-1}.dept-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:768px){:root{--sw:0px}.sidebar{display:none}.charts-row{grid-template-columns:1fr}.fg{grid-template-columns:1fr}.stats-grid{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head>
 <body>
 
-<!-- UPLOAD SCREEN -->
-<div id="uploadScreen">
-  <div class="upload-card">
-    <div class="logo">OSI Digital</div>
-    <h1>Resource Utilization<br>Tracker</h1>
-    <p>Upload your utilization Excel file to get started. All processing happens in your browser — no data is sent to any server.</p>
-    <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
-      <div class="icon">📊</div>
-      <p><strong>Click to browse</strong> or drag &amp; drop</p>
-      <p style="margin-top:4px">Supports <strong>.xlsx</strong> format</p>
-    </div>
-    <input type="file" id="fileInput" accept=".xlsx,.xls" onchange="handleFileUpload(event)">
-    <button class="btn-upload" onclick="document.getElementById('fileInput').click()">
-      📂 Choose Excel File
-    </button>
-    <p class="upload-hint">Expected sheets: DNET · JAVA · PPR · MOBL · ALL</p>
-  </div>
-</div>
-
-<!-- APP SHELL -->
 <div id="appShell">
-  <!-- Sidebar -->
+  <!-- SIDEBAR -->
   <aside class="sidebar">
-    <div class="sidebar-brand">
-      <div class="brand-label">OSI Digital</div>
-      <div class="brand-name">Utilization</div>
-      <div class="brand-sub">Resource Tracker</div>
+    <div class="sb-brand">
+      <div class="bl">OSI Digital</div>
+      <div class="bn">Utilization</div>
+      <div class="bs">Resource Tracker v2</div>
     </div>
-    <nav class="sidebar-nav">
-      <div class="nav-section-label">Overview</div>
-      <div class="nav-item active" onclick="showView('dashboard')">
-        <span class="nav-icon">📊</span> Dashboard
-      </div>
-      <div class="nav-section-label">Resources</div>
-      <div class="nav-item" onclick="showView('allResources')">
-        <span class="nav-icon">👥</span> All Resources
-        <span class="nav-badge" id="badgeAll">0</span>
-      </div>
-      <div class="nav-item" onclick="showView('billable')">
-        <span class="nav-icon">✅</span> Billable
-        <span class="nav-badge" id="badgeBillable" style="background:#10b981;color:#fff">0</span>
-      </div>
-      <div class="nav-section-label">Non-Billable</div>
-      <div class="nav-item" onclick="showView('nbGt2')">
-        <span class="nav-icon">🔶</span> NB · Exp &gt; 2 yrs
-        <span class="nav-badge" id="badgeNbGt2" style="background:#ef4444;color:#fff">0</span>
-      </div>
-      <div class="nav-item" onclick="showView('nbLt2')">
-        <span class="nav-icon">🔷</span> NB · Exp ≤ 2 yrs
-        <span class="nav-badge" id="badgeNbLt2" style="background:#f97316;color:#fff">0</span>
-      </div>
-      <div class="nav-section-label">Actions</div>
-      <div class="nav-item" onclick="openAddResourceModal()">
-        <span class="nav-icon">➕</span> Add Resource
-      </div>
-      <div class="nav-item" onclick="openAddMonthModal()">
-        <span class="nav-icon">📅</span> Add Month
-      </div>
-      <div class="nav-item" onclick="exportToExcel()">
-        <span class="nav-icon">⬇️</span> Export Excel
-      </div>
-      <div class="nav-item" onclick="resetApp()">
-        <span class="nav-icon">🔄</span> Load New File
-      </div>
+    <nav class="sb-nav">
+      <div class="nav-sec">Overview</div>
+      <div class="nav-item active" data-view="dashboard"><span class="ni">📊</span>Dashboard</div>
+      <div class="nav-sec">Resources</div>
+      <div class="nav-item" data-view="allResources"><span class="ni">👥</span>All Resources<span class="nbd" id="bdgAll">0</span></div>
+      <div class="nav-item" data-view="billable"><span class="ni">✅</span>Billable<span class="nbd g" id="bdgBill">0</span></div>
+      <div class="nav-sec">Non-Billable</div>
+      <div class="nav-item" data-view="nbGt2"><span class="ni">🔶</span>NB · Exp &gt; 2 yrs<span class="nbd r" id="bdgNbGt2">0</span></div>
+      <div class="nav-item" data-view="nbLt2"><span class="ni">🔷</span>NB · Exp ≤ 2 yrs<span class="nbd p" id="bdgNbLt2">0</span></div>
+      <div class="nav-sec">Workforce</div>
+      <div class="nav-item" data-view="resignations"><span class="ni">🚪</span>Resignations<span class="nbd" id="bdgResign">0</span></div>
+      <div class="nav-sec">Actions</div>
+      <div class="nav-item" id="navUpload"><span class="ni">📂</span>Upload Excel</div>
+      <div class="nav-item" id="navAddRes"><span class="ni">➕</span>Add Resource</div>
+      <div class="nav-item" id="navAddMonth"><span class="ni">📅</span>Add Month</div>
+      <div class="nav-item" id="navExport"><span class="ni">⬇️</span>Export Excel</div>
     </nav>
-    <div class="sidebar-footer">
-      <div id="fileNameDisplay">No file loaded</div>
-      <div id="lastUpdated" style="margin-top:2px"></div>
+    <div class="sb-hist" id="sbHist" style="display:none">
+      <div class="sb-hist-t">Recent Uploads</div>
+      <div id="histList"></div>
     </div>
+    <div class="sb-foot"><div id="sbFile">No file loaded</div><div id="sbDate"></div></div>
   </aside>
 
-  <!-- Header -->
+  <!-- HEADER -->
   <header class="main-header">
-    <div class="header-title" id="headerTitle">Dashboard</div>
-    <div class="header-controls">
-      <select class="month-select" id="monthSelector" onchange="onMonthChange()">
-        <option value="">All Months</option>
+    <div class="h-title" id="hTitle">Dashboard</div>
+    <div class="h-ctrl">
+      <select class="sel" id="monthSel" onchange="STATE.selectedMonth=this.value;refresh()">
+        <option value="">Latest Month</option>
       </select>
-      <select class="month-select" id="deptFilter" onchange="applyFilters()">
-        <option value="">All Departments</option>
-        <option value="DNET">.NET (DNET)</option>
-        <option value="JAVA">Java (JAVA)</option>
-        <option value="PPR">PHP (PPR)</option>
-        <option value="MOBL">Mobile (MOBL)</option>
+      <select class="sel" id="deptSel" onchange="STATE.dept=this.value;refresh()">
+        <option value="">All Depts</option>
+        <option value="DNET">.NET</option><option value="JAVA">Java</option>
+        <option value="PPR">PHP/Py</option><option value="MOBL">Mobile</option>
       </select>
-      <button class="btn btn-primary" onclick="openAddResourceModal()">+ Add Resource</button>
+      <button class="btn btn-p btn-sm" id="hUpload">📂 Upload</button>
+      <button class="btn btn-ok btn-sm" id="hExport">⬇ Export</button>
     </div>
   </header>
 
-  <!-- Main Content -->
+  <!-- CONTENT -->
   <main class="main-content">
-
-    <!-- DASHBOARD VIEW -->
+    <!-- DASHBOARD -->
     <div class="view active" id="view-dashboard">
-      <div class="stats-grid" id="statsGrid">
-        <div class="stat-card blue">
-          <div class="stat-label">Total Resources</div>
-          <div class="stat-value" id="statTotal">0</div>
-          <div class="stat-sub">Active in selected month</div>
+      <!-- Upload onboard banner — shown only when no data loaded -->
+      <div class="onboard-banner" id="onboardBanner">
+        <div class="ob-icon">📂</div>
+        <div class="ob-body">
+          <div class="ob-title">No data loaded — upload your utilization Excel file to populate the dashboard</div>
+          <div class="ob-sub">
+            Click <strong>Upload Excel</strong> in the sidebar or header to get started.
+            <span class="ob-tip">ℹ️ Supported format
+              <div class="ob-tipbox">
+                Expected sheets: DNET · JAVA · PPR · MOBL · ALL<br>
+                Columns: Name, DOJ, Total Exp, OSI YOE, Designation, Platform<br>
+                Then monthly groups: %Billable · Client · Project<br>
+                Optional trailing: Exit Date · Remarks · Comments
+              </div>
+            </span>
+          </div>
         </div>
-        <div class="stat-card green">
-          <div class="stat-label">Billable</div>
-          <div class="stat-value" id="statBillable">0</div>
-          <div class="stat-sub" id="statBillablePct">—% utilization</div>
-        </div>
-        <div class="stat-card red">
-          <div class="stat-label">Non-Billable</div>
-          <div class="stat-value" id="statNB">0</div>
-          <div class="stat-sub" id="statNBPct">—% of team</div>
-        </div>
-        <div class="stat-card orange">
-          <div class="stat-label">NB · Exp &gt; 2 yrs</div>
-          <div class="stat-value" id="statNBGt2">0</div>
-          <div class="stat-sub">Experienced non-billable</div>
-        </div>
-        <div class="stat-card amber">
-          <div class="stat-label">NB · Exp ≤ 2 yrs</div>
-          <div class="stat-value" id="statNBLt2">0</div>
-          <div class="stat-sub">Junior non-billable</div>
-        </div>
+        <button class="btn btn-p btn-sm" onclick="UPLOAD.open()">📂 Upload Now</button>
       </div>
 
+      <div class="stats-grid" id="statsGrid"></div>
       <div class="dept-grid" id="deptGrid"></div>
-
       <div class="charts-row">
-        <div class="chart-card">
-          <h3>Billable vs Non-Billable</h3>
-          <div class="chart-wrap" style="height:200px"><canvas id="chartBillable"></canvas></div>
-        </div>
-        <div class="chart-card">
-          <h3>Non-Billable Breakdown</h3>
-          <div class="chart-wrap" style="height:200px"><canvas id="chartNB"></canvas></div>
-        </div>
-        <div class="chart-card">
-          <h3>Department Utilization Rate</h3>
-          <div class="chart-wrap" style="height:200px"><canvas id="chartDept"></canvas></div>
-        </div>
+        <div class="chart-card"><h3>Billable vs Non-Billable</h3><div style="height:185px" id="cBillWrap"><canvas id="cBill"></canvas></div></div>
+        <div class="chart-card"><h3>NB by Experience</h3><div style="height:185px" id="cNBWrap"><canvas id="cNB"></canvas></div></div>
+        <div class="chart-card"><h3>Department Utilization %</h3><div style="height:185px" id="cDeptWrap"><canvas id="cDept"></canvas></div></div>
       </div>
-
       <div class="table-card">
-        <div class="table-toolbar">
-          <h3>📋 Non-Billable Resources (Current Month)</h3>
-          <span id="nbTableCount" class="badge badge-red">0</span>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Resource</th>
-                <th>Dept</th>
-                <th>Designation</th>
-                <th>Experience</th>
-                <th>Category</th>
-                <th>% Billable</th>
-                <th>Client</th>
-                <th>Comments</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody id="dashboardNBTable"></tbody>
-          </table>
-        </div>
+        <div class="t-tb"><h3>⚠️ Non-Billable Resources</h3><span class="badge br" id="nbDashCnt">0</span></div>
+        <div class="t-wrap"><table><thead><tr>
+          <th>Resource</th><th>Dept</th><th>Designation</th><th>Exp</th>
+          <th>Category</th><th>% Bill</th><th>Client</th><th>Comments</th><th></th>
+        </tr></thead><tbody id="dashNBBody"></tbody></table></div>
       </div>
     </div>
 
-    <!-- ALL RESOURCES VIEW -->
+    <!-- ALL RESOURCES -->
     <div class="view" id="view-allResources">
       <div class="table-card">
-        <div class="table-toolbar">
+        <div class="t-tb">
           <h3>All Resources</h3>
-          <input type="text" class="search-box" id="searchAll" placeholder="🔍 Search by name, client..." oninput="renderAllTable()">
-          <select class="filter-select" id="filterStatus" onchange="renderAllTable()">
-            <option value="">All Status</option>
-            <option value="billable">Billable (≥50%)</option>
-            <option value="nb">Non-Billable (&lt;50%)</option>
+          <input class="srch" id="srchAll" placeholder="🔍 Name, client, remarks..." oninput="PAG.reset('all');debouncedRender('renderAll')">
+          <select class="fsel" id="fStAll" onchange="PAG.reset('all');renderAll()">
+            <option value="">All Status</option><option value="billable">Billable</option><option value="nb">Non-Billable</option>
           </select>
-          <button class="btn btn-success btn-sm" onclick="exportToExcel()">⬇ Export</button>
+          <button class="btn btn-s btn-sm" onclick="EXPORT.filtered('all')">⬇ Export</button>
         </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Resource</th>
-                <th>Dept</th>
-                <th>Platform</th>
-                <th>Designation</th>
-                <th>Exp (yrs)</th>
-                <th>% Billable</th>
-                <th>Client</th>
-                <th>Project</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody id="allResourcesTable"></tbody>
-          </table>
-        </div>
-        <div class="table-footer">
-          <span id="allTableCount">0 records</span>
-          <div class="pagination" id="allPagination"></div>
-        </div>
+        <div class="t-wrap"><table><thead><tr>
+          <th>Resource</th><th>Dept</th><th>Platform</th><th>Designation</th>
+          <th>Exp</th><th>% Bill</th><th>Client</th><th>Project</th>
+          <th>Remarks</th><th>Comments</th><th>Status</th>
+        </tr></thead><tbody id="allBody"></tbody></table></div>
+        <div class="t-ft" id="ftAll"></div>
       </div>
     </div>
 
-    <!-- BILLABLE VIEW -->
+    <!-- BILLABLE -->
     <div class="view" id="view-billable">
       <div class="table-card">
-        <div class="table-toolbar">
+        <div class="t-tb">
           <h3>✅ Billable Resources</h3>
-          <input type="text" class="search-box" id="searchBillable" placeholder="🔍 Search..." oninput="renderBillableTable()">
+          <input class="srch" id="srchBill" placeholder="🔍 Search..." oninput="PAG.reset('bill');debouncedRender('renderBillable')">
+          <button class="btn btn-s btn-sm" onclick="EXPORT.filtered('billable')">⬇ Export</button>
         </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Resource</th><th>Dept</th><th>Platform</th><th>Designation</th>
-                <th>Exp (yrs)</th><th>% Billable</th><th>Client</th><th>Project</th><th>Actions</th>
-              </tr>
-            </thead>
-            <tbody id="billableTable"></tbody>
-          </table>
-        </div>
-        <div class="table-footer"><span id="billableCount">0 records</span></div>
+        <div class="t-wrap"><table><thead><tr>
+          <th>Resource</th><th>Dept</th><th>Platform</th><th>Designation</th>
+          <th>Exp</th><th>% Bill</th><th>Client</th><th>Project</th><th>Remarks</th>
+        </tr></thead><tbody id="billBody"></tbody></table></div>
+        <div class="t-ft" id="ftBill"></div>
       </div>
     </div>
 
-    <!-- NB > 2 VIEW -->
+    <!-- NB > 2 -->
     <div class="view" id="view-nbGt2">
-      <div style="background:var(--red-light);border-radius:var(--radius);padding:14px 20px;margin-bottom:16px;border-left:4px solid var(--red)">
+      <div class="r-banner" style="background:linear-gradient(135deg,var(--rxl),#fff1f2);border-left-color:var(--red)">
         <strong style="color:#991b1b">🔶 Non-Billable | Experience &gt; 2 Years</strong>
-        <p style="color:#b91c1c;font-size:12px;margin-top:4px">Resources with &lt;50% billing and more than 2 years of total experience. These should be prioritized for client placement.</p>
+        <p style="color:#b91c1c">Resources billing &lt;50% with 2+ years experience. Prioritize for client placement.</p>
       </div>
       <div class="table-card">
-        <div class="table-toolbar">
-          <h3>NB · Experience &gt; 2 Years</h3>
-          <input type="text" class="search-box" id="searchNbGt2" placeholder="🔍 Search..." oninput="renderNbGt2Table()">
-          <button class="btn btn-success btn-sm" onclick="exportFilteredTable('nbGt2')">⬇ Export</button>
+        <div class="t-tb">
+          <h3>NB · Exp &gt; 2 Years</h3>
+          <input class="srch" id="srchNbGt2" placeholder="🔍 Search..." oninput="PAG.reset('nbGt2');debouncedRender('renderNbGt2')">
+          <button class="btn btn-s btn-sm" onclick="EXPORT.filtered('nbGt2')">⬇ Export</button>
         </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Resource</th><th>Dept</th><th>Platform</th><th>Designation</th>
-                <th>Exp (yrs)</th><th>OSI YOE</th><th>% Billable</th><th>Client</th><th>Utilization Comments</th><th>Actions</th>
-              </tr>
-            </thead>
-            <tbody id="nbGt2Table"></tbody>
-          </table>
-        </div>
-        <div class="table-footer"><span id="nbGt2Count">0 records</span></div>
+        <div class="t-wrap"><table><thead><tr>
+          <th>Resource</th><th>Dept</th><th>Platform</th><th>Designation</th>
+          <th>Exp</th><th>OSI YOE</th><th>% Bill</th><th>Client</th><th>Comments</th>
+        </tr></thead><tbody id="nbGt2Body"></tbody></table></div>
+        <div class="t-ft" id="ftNbGt2"></div>
       </div>
     </div>
 
-    <!-- NB < 2 VIEW -->
+    <!-- NB ≤ 2 -->
     <div class="view" id="view-nbLt2">
-      <div style="background:var(--orange-light);border-radius:var(--radius);padding:14px 20px;margin-bottom:16px;border-left:4px solid var(--orange)">
+      <div class="r-banner" style="background:linear-gradient(135deg,var(--orl),#fff7ed);border-left-color:var(--org)">
         <strong style="color:#7c2d12">🔷 Non-Billable | Experience ≤ 2 Years</strong>
-        <p style="color:#9a3412;font-size:12px;margin-top:4px">Resources with &lt;50% billing and up to 2 years of total experience. Consider training, bench projects, or entry-level placements.</p>
+        <p style="color:#9a3412">Resources billing &lt;50% with up to 2 years experience. Consider bench projects.</p>
       </div>
       <div class="table-card">
-        <div class="table-toolbar">
-          <h3>NB · Experience ≤ 2 Years</h3>
-          <input type="text" class="search-box" id="searchNbLt2" placeholder="🔍 Search..." oninput="renderNbLt2Table()">
-          <button class="btn btn-success btn-sm" onclick="exportFilteredTable('nbLt2')">⬇ Export</button>
+        <div class="t-tb">
+          <h3>NB · Exp ≤ 2 Years</h3>
+          <input class="srch" id="srchNbLt2" placeholder="🔍 Search..." oninput="PAG.reset('nbLt2');debouncedRender('renderNbLt2')">
+          <button class="btn btn-s btn-sm" onclick="EXPORT.filtered('nbLt2')">⬇ Export</button>
         </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Resource</th><th>Dept</th><th>Platform</th><th>Designation</th>
-                <th>Exp (yrs)</th><th>OSI YOE</th><th>% Billable</th><th>Client</th><th>Utilization Comments</th><th>Actions</th>
-              </tr>
-            </thead>
-            <tbody id="nbLt2Table"></tbody>
-          </table>
-        </div>
-        <div class="table-footer"><span id="nbLt2Count">0 records</span></div>
+        <div class="t-wrap"><table><thead><tr>
+          <th>Resource</th><th>Dept</th><th>Platform</th><th>Designation</th>
+          <th>Exp</th><th>OSI YOE</th><th>% Bill</th><th>Client</th><th>Comments</th>
+        </tr></thead><tbody id="nbLt2Body"></tbody></table></div>
+        <div class="t-ft" id="ftNbLt2"></div>
       </div>
     </div>
 
+    <!-- RESIGNATIONS -->
+    <div class="view" id="view-resignations">
+      <div class="stats-grid" id="resignStats"></div>
+      <div class="charts-row" style="grid-template-columns:1fr 1fr">
+        <div class="chart-card"><h3>Resignation Trend</h3><div style="height:200px"><canvas id="cResignTrend"></canvas></div></div>
+        <div class="chart-card"><h3>By Department</h3><div style="height:200px"><canvas id="cResignDept"></canvas></div></div>
+      </div>
+      <div class="table-card">
+        <div class="t-tb">
+          <h3>🚪 Resignation Records</h3>
+          <input class="srch" id="srchResign" placeholder="🔍 Search..." oninput="PAG.reset('resign');debouncedRender('renderResignations')">
+          <select class="fsel" id="fResignMo" onchange="PAG.reset('resign');renderResignations()"><option value="">All Months</option></select>
+          <select class="fsel" id="fResignYr" onchange="PAG.reset('resign');renderResignations()"><option value="">All Years</option></select>
+          <select class="fsel" id="fResignDp" onchange="PAG.reset('resign');renderResignations()">
+            <option value="">All Depts</option>
+            <option value="DNET">DNET</option><option value="JAVA">JAVA</option>
+            <option value="PPR">PPR</option><option value="MOBL">MOBL</option>
+          </select>
+          <button class="btn btn-s btn-sm" onclick="EXPORT.filtered('resignations')">⬇ Export</button>
+        </div>
+        <div class="t-wrap"><table><thead><tr>
+          <th>Resource</th><th>Dept</th><th>Designation</th><th>Exit Date</th>
+          <th>Last Working Day</th><th>Remarks</th><th>Replacement Status</th><th></th>
+        </tr></thead><tbody id="resignBody"></tbody></table></div>
+        <div class="t-ft" id="ftResign"></div>
+      </div>
+    </div>
   </main>
 </div>
 
-<!-- MODAL: Add / Edit Resource -->
-<div class="modal-overlay" id="resourceModal">
+<div id="toast"></div>
+<input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none">
+
+<!-- MODAL: Upload -->
+<div class="modal-overlay" id="mdUpload">
+  <div class="modal modal-sm">
+    <div class="m-hd"><h2>📂 Upload Excel</h2><button class="m-cl" onclick="closeModal('mdUpload')">✕</button></div>
+    <div class="m-bd">
+      <div class="uopts">
+        <div class="uopt selected" id="uoptReplace" onclick="selectMode('replace')">
+          <div class="uo-ic">🔄</div><div class="uo-t">Replace All Data</div>
+          <div class="uo-d">Discard current and load fresh</div>
+        </div>
+        <div class="uopt" id="uoptMerge" onclick="selectMode('merge')">
+          <div class="uo-ic">🔀</div><div class="uo-t">Merge Changes Only</div>
+          <div class="uo-d">Keep existing, update changed records</div>
+        </div>
+      </div>
+      <div class="e-drop" id="mdDrop" style="min-width:unset;text-align:center;margin-bottom:0">
+        <div class="di">📁</div><p><strong>Drop file here</strong> or click to browse</p>
+      </div>
+    </div>
+    <div class="m-ft">
+      <button class="btn btn-s" onclick="closeModal('mdUpload')">Cancel</button>
+      <button class="btn btn-p" onclick="document.getElementById('fileInput').click()">Choose File</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Merge Summary -->
+<div class="modal-overlay" id="mdSummary">
+  <div class="modal modal-sm">
+    <div class="m-hd"><h2>✅ Upload Complete</h2><button class="m-cl" onclick="closeModal('mdSummary')">✕</button></div>
+    <div class="m-bd" id="summaryBody"></div>
+    <div class="m-ft"><button class="btn btn-p" onclick="closeModal('mdSummary')">Done</button></div>
+  </div>
+</div>
+
+<!-- MODAL: Add/Edit Resource -->
+<div class="modal-overlay" id="mdResource">
   <div class="modal">
-    <div class="modal-header">
-      <h2 id="modalTitle">Add Resource</h2>
-      <button class="modal-close" onclick="closeModal('resourceModal')">✕</button>
-    </div>
-    <div class="modal-body">
-      <input type="hidden" id="editResourceId">
-      <div class="form-section">
-        <div class="form-section-title">Resource Information</div>
-        <div class="form-grid">
-          <div class="form-group">
-            <label class="form-label">Resource Name *</label>
-            <input type="text" class="form-input" id="fName" placeholder="Full Name">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Department *</label>
-            <select class="form-select" id="fDept">
-              <option value="DNET">.NET (DNET)</option>
-              <option value="JAVA">Java (JAVA)</option>
-              <option value="PPR">PHP/Python (PPR)</option>
-              <option value="MOBL">Mobile (MOBL)</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Primary Platform</label>
-            <input type="text" class="form-input" id="fPlatform" placeholder="e.g. .NET, Java, Angular">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Secondary Platform</label>
-            <input type="text" class="form-input" id="fPlatform2" placeholder="e.g. React, Angular">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Designation</label>
-            <input type="text" class="form-input" id="fDesig" placeholder="e.g. SSE, PSE, TL">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Date of Joining</label>
-            <input type="date" class="form-input" id="fDoj">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Total Experience (yrs)</label>
-            <input type="number" class="form-input" id="fExp" placeholder="e.g. 5.5" step="0.1" min="0">
-          </div>
-          <div class="form-group">
-            <label class="form-label">OSI Experience (yrs)</label>
-            <input type="number" class="form-input" id="fOsiYoe" placeholder="e.g. 2.5" step="0.1" min="0">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Experience Before OSI (yrs)</label>
-            <input type="number" class="form-input" id="fBeforeOsi" placeholder="e.g. 3.0" step="0.1" min="0">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Exit Date</label>
-            <input type="date" class="form-input" id="fExitDate">
-          </div>
-          <div class="form-group full">
-            <label class="form-label">Remarks</label>
-            <textarea class="form-textarea" id="fRemarks" placeholder="Resignation date, replacement details..."></textarea>
-          </div>
-          <div class="form-group full">
-            <label class="form-label">Utilization Comments</label>
-            <textarea class="form-textarea" id="fUtiComments" placeholder="Client plan, bench activities..."></textarea>
-          </div>
-        </div>
+    <div class="m-hd"><h2 id="mdResTitle">Add Resource</h2><button class="m-cl" onclick="closeModal('mdResource')">✕</button></div>
+    <div class="m-bd">
+      <input type="hidden" id="fEditId">
+      <div class="fsec">Resource Information</div>
+      <div class="fg">
+        <div class="fi"><label class="fl">Name *</label><input type="text" class="inp" id="fName" placeholder="Full name"></div>
+        <div class="fi"><label class="fl">Department *</label>
+          <select class="inp fsel-m" id="fDept"><option value="DNET">.NET</option><option value="JAVA">Java</option><option value="PPR">PHP/Py</option><option value="MOBL">Mobile</option></select></div>
+        <div class="fi"><label class="fl">Primary Platform</label><input type="text" class="inp" id="fPlat" placeholder=".NET, Java, Angular..."></div>
+        <div class="fi"><label class="fl">Secondary Platform</label><input type="text" class="inp" id="fPlat2" placeholder="React, SQL..."></div>
+        <div class="fi"><label class="fl">Designation</label><input type="text" class="inp" id="fDesig" placeholder="SSE, TL, PSE..."></div>
+        <div class="fi"><label class="fl">Date of Joining</label><input type="date" class="inp" id="fDoj"></div>
+        <div class="fi"><label class="fl">Total Exp (yrs)</label><input type="number" class="inp" id="fExp" step="0.1" min="0"></div>
+        <div class="fi"><label class="fl">OSI YOE (yrs)</label><input type="number" class="inp" id="fOsiYoe" step="0.1" min="0"></div>
+        <div class="fi"><label class="fl">Before OSI (yrs)</label><input type="number" class="inp" id="fBeforeOsi" step="0.1" min="0"></div>
+        <div class="fi"><label class="fl">Exit Date</label><input type="date" class="inp" id="fExit"></div>
+        <div class="fi full"><label class="fl">Remarks</label><textarea class="fta" id="fRemarks" placeholder="Resignation, replacement details..."></textarea></div>
+        <div class="fi full"><label class="fl">Utilization Comments</label><textarea class="fta" id="fUtiCmt" placeholder="Client pipeline, bench activities..."></textarea></div>
+        <div class="fi full"><label class="fl">Replacement Status</label><input type="text" class="inp" id="fReplSt" placeholder="Not started / In progress / Hired"></div>
       </div>
-      <div class="form-section">
-        <div class="form-section-title">Monthly Utilization</div>
-        <div id="monthRows" style="max-height:320px;overflow-y:auto;border:1px solid var(--gray-100);border-radius:6px;padding:8px 12px">
-          <div style="display:grid;grid-template-columns:120px 80px 1fr 1fr;gap:8px;padding:6px 0;border-bottom:1px solid var(--gray-100)">
-            <span style="font-size:11px;font-weight:700;color:var(--gray-400)">MONTH</span>
-            <span style="font-size:11px;font-weight:700;color:var(--gray-400)">%BILL</span>
-            <span style="font-size:11px;font-weight:700;color:var(--gray-400)">CLIENT</span>
-            <span style="font-size:11px;font-weight:700;color:var(--gray-400)">PROJECT</span>
-          </div>
+      <div class="fsec">Monthly Utilization</div>
+      <div id="mthRows" style="border:1px solid var(--g100);border-radius:6px;padding:6px 10px;max-height:290px;overflow-y:auto">
+        <div style="display:grid;grid-template-columns:105px 65px 1fr 1fr;gap:4px;padding:4px 0 6px;border-bottom:1px solid var(--g200)">
+          <span class="fl">Month</span><span class="fl">%Bill</span><span class="fl">Client</span><span class="fl">Project</span>
         </div>
       </div>
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal('resourceModal')">Cancel</button>
-      <button class="btn btn-primary" onclick="saveResource()">💾 Save Resource</button>
+    <div class="m-ft">
+      <button class="btn btn-s" onclick="closeModal('mdResource')">Cancel</button>
+      <button class="btn btn-p" onclick="MODAL.save()">💾 Save</button>
     </div>
   </div>
 </div>
 
 <!-- MODAL: Add Month -->
-<div class="modal-overlay" id="addMonthModal">
-  <div class="modal" style="max-width:440px">
-    <div class="modal-header">
-      <h2>Add New Month</h2>
-      <button class="modal-close" onclick="closeModal('addMonthModal')">✕</button>
+<div class="modal-overlay" id="mdMonth">
+  <div class="modal modal-sm">
+    <div class="m-hd"><h2>📅 Add Month</h2><button class="m-cl" onclick="closeModal('mdMonth')">✕</button></div>
+    <div class="m-bd">
+      <p style="font-size:13px;color:var(--g500);margin-bottom:12px">Select a month to add tracking for all resources.</p>
+      <div class="mchips" id="mchipCont"></div>
     </div>
-    <div class="modal-body">
-      <p style="font-size:13px;color:var(--gray-500);margin-bottom:16px">Select the month to add tracking for all resources. Existing months are shown dimmed.</p>
-      <div class="month-chips" id="monthChips"></div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal('addMonthModal')">Cancel</button>
-      <button class="btn btn-primary" onclick="confirmAddMonth()">➕ Add Month</button>
+    <div class="m-ft">
+      <button class="btn btn-s" onclick="closeModal('mdMonth')">Cancel</button>
+      <button class="btn btn-p" onclick="MODAL.confirmMonth()">➕ Add</button>
     </div>
   </div>
 </div>
 
 <script>
-// ═══════════════════════════════════════════════════════
-// DATA LAYER
-// ═══════════════════════════════════════════════════════
-let resources = [];
-let months = [];
-let selectedMonth = '';
-let selectedDept = '';
-let fileName = '';
-let currentPage = { all: 1 };
-const PAGE_SIZE = 50;
-let charts = {};
-let editingId = null;
-let selectedNewMonth = null;
+'use strict';
+/* ── CONFIG ── */
+const CFG = {
+  PAGE: 25, BILL: 0.5,
+  DEPTS: ['DNET','JAVA','PPR','MOBL'],
+  DLBL: {DNET:'.NET',JAVA:'Java',PPR:'PHP/Py',MOBL:'Mobile'},
+  DCOL: {DNET:'#2563eb',JAVA:'#10b981',PPR:'#f59e0b',MOBL:'#8b5cf6'},
+  MO: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+  LS_D:'rut_data',LS_M:'rut_months',LS_H:'rut_hist',LS_P:'rut_prefs'
+};
 
-// Excel serial to JS Date
-function excelDateToJS(serial) {
-  if (!serial || isNaN(serial) || serial <= 0) return null;
-  const d = new Date((serial - 25569) * 86400 * 1000);
-  return d;
+/* ── STATE ── */
+const STATE = {
+  resources:[], months:[], selectedMonth:'', dept:'',
+  uploadMode:'replace', newMonth:null, charts:{}, timers:{},
+  pag:{
+    all:   {page:1, size:25},
+    bill:  {page:1, size:25},
+    nbGt2: {page:1, size:25},
+    nbLt2: {page:1, size:25},
+    resign:{page:1, size:25}
+  },
+  filters:{
+    all:   {search:'', status:''},
+    bill:  {search:''},
+    nbGt2: {search:''},
+    nbLt2: {search:''},
+    resign:{search:'', mo:'', yr:'', dept:''}
+  }
+};
+
+/* ── UTILS ── */
+const $=id=>document.getElementById(id);
+const $$=s=>document.querySelectorAll(s);
+const trunc=(s,n=28)=>{s=String(s||'');return s.length>n?s.slice(0,n)+'…':s};
+const exJsDate=v=>(!v||isNaN(v)||v<1)?null:new Date((v-25569)*86400*1000);
+const exMonthLbl=v=>{const d=exJsDate(v);return d?d.toLocaleDateString('en-US',{month:'short',year:'numeric',timeZone:'UTC'}):null};
+const isSerial=v=>typeof v==='number'&&v>40000&&v<55000;
+const fmtDate=d=>(d instanceof Date&&!isNaN(d))?d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}):'—';
+const m2d=lbl=>lbl?new Date('1 '+lbl):null;
+const activeMonth=()=>STATE.selectedMonth||STATE.months[STATE.months.length-1]||'';
+
+function debouncedRender(fn) {
+  clearTimeout(STATE.timers[fn]);
+  STATE.timers[fn]=setTimeout(()=>window[fn]&&window[fn](),280);
 }
 
-function excelSerialToMonthLabel(serial) {
-  const d = excelDateToJS(serial);
-  if (!d) return null;
-  return d.toLocaleDateString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' });
+/* ── COMPUTED ── */
+function getBill(r,m){
+  m=m||activeMonth();const d=r.months[m];if(!d)return null;
+  const v=d.billable;if(v===null||v===undefined||v==='')return null;
+  if(String(v).toUpperCase()==='NA')return 'NA';
+  const n=parseFloat(v);return isNaN(n)?null:n;
+}
+const isNB=(r,m)=>{const b=getBill(r,m);return b!==null&&b!=='NA'&&b<CFG.BILL};
+const isBill=(r,m)=>{const b=getBill(r,m);return b!==null&&b!=='NA'&&b>=CFG.BILL};
+const bPct=(r,m)=>{const b=getBill(r,m);return(b===null||b==='NA')?null:Math.min(b,1)*100};
+const isResigned=r=>!!(r.exitDate instanceof Date&&!isNaN(r.exitDate));
+const resignMo=r=>r.exitDate?r.exitDate.toLocaleDateString('en-US',{month:'short',year:'numeric'}):null;
+const filtered=()=>STATE.resources.filter(r=>!STATE.dept||r.dept===STATE.dept);
+function activeRes(m){m=m||activeMonth();return filtered().filter(r=>{if(isResigned(r)&&r.exitDate<new Date())return false;return!m||r.months[m]!==undefined});}
+const rKey=r=>(r.name||'').toLowerCase().trim()+'|'+fmtDate(r.doj);
+
+/* ── UI ATOMS ── */
+const deptTag=d=>{const C={DNET:'tdnet',JAVA:'tjava',PPR:'tppr',MOBL:'tmobl'};return`<span class="dept-tag ${C[d]||'tjava'}">${CFG.DLBL[d]||d}</span>`};
+function statusBadge(r,m){
+  if(isResigned(r))return'<span class="badge bo">Resigned</span>';
+  const b=getBill(r,m);
+  if(b==='NA')return'<span class="badge bgr">Leave</span>';
+  if(b===null)return'<span class="badge bgr">—</span>';
+  return b>=CFG.BILL?'<span class="badge bg">Billable</span>':'<span class="badge br">Non-Billable</span>';
+}
+function billBar(pct){
+  if(pct===null)return'<span style="color:var(--g400);font-size:11px">—</span>';
+  const c=pct>=50?'var(--green)':pct>0?'var(--org)':'var(--red)';
+  return`<span class="bbw"><span class="bbf" style="width:${Math.min(pct,100)}%;background:${c}"></span></span><span style="font-size:11px">${pct.toFixed(0)}%</span>`;
+}
+const rl=r=>`<span class="rl" onclick="MODAL.openEdit(${r.id})" title="Click to edit">${trunc(r.name,22)}<span class="rl-ic">✏</span></span>`;
+const rmkCell=t=>{if(!t)return'<span style="color:var(--g300)">—</span>';const s=t.replace(/</g,'&lt;').replace(/>/g,'&gt;');return`<div class="rmkt" onclick="this.classList.toggle('exp')" title="Click to expand">${s}</div>`};
+
+function showToast(msg,type='',dur=3200){
+  const el=document.createElement('div');el.className='toast'+(type?' '+type:'');el.textContent=msg;
+  $('toast').appendChild(el);setTimeout(()=>el.style.opacity='0',dur-400);setTimeout(()=>el.remove(),dur);
+}
+const closeModal=id=>$(id).classList.remove('open');
+const openModal=id=>$(id).classList.add('open');
+
+/* ── STORAGE ── */
+const STORAGE={
+  save(){
+    try{
+      const ser=STATE.resources.map(r=>({...r,doj:r.doj?r.doj.toISOString():null,exitDate:r.exitDate?r.exitDate.toISOString():null}));
+      localStorage.setItem(CFG.LS_D,JSON.stringify(ser));
+      localStorage.setItem(CFG.LS_M,JSON.stringify(STATE.months));
+      // persist prefs: month, dept, page sizes, filters
+      const pagSizes={};Object.keys(STATE.pag).forEach(k=>pagSizes[k]=STATE.pag[k].size);
+      localStorage.setItem(CFG.LS_P,JSON.stringify({
+        selectedMonth:STATE.selectedMonth, dept:STATE.dept,
+        pagSizes, filters:STATE.filters
+      }));
+    }catch(e){}
+  },
+  load(){
+    try{
+      const raw=localStorage.getItem(CFG.LS_D),rawM=localStorage.getItem(CFG.LS_M);
+      if(!raw||!rawM)return false;
+      STATE.resources=JSON.parse(raw).map(r=>({...r,doj:r.doj?new Date(r.doj):null,exitDate:r.exitDate?new Date(r.exitDate):null}));
+      STATE.months=JSON.parse(rawM);
+      const p=JSON.parse(localStorage.getItem(CFG.LS_P)||'{}');
+      STATE.selectedMonth=p.selectedMonth||''; STATE.dept=p.dept||'';
+      // restore page sizes
+      if(p.pagSizes) Object.keys(p.pagSizes).forEach(k=>{ if(STATE.pag[k]) STATE.pag[k].size=p.pagSizes[k]; });
+      // restore filters
+      if(p.filters) Object.keys(p.filters).forEach(k=>{ if(STATE.filters[k]) Object.assign(STATE.filters[k], p.filters[k]); });
+      return STATE.resources.length>0;
+    }catch(e){return false;}
+  },
+  addHist(name,changes){
+    try{const h=JSON.parse(localStorage.getItem(CFG.LS_H)||'[]');h.unshift({name,date:new Date().toISOString(),changes});h.splice(8);localStorage.setItem(CFG.LS_H,JSON.stringify(h));}catch(e){}
+  },
+  getHist(){try{return JSON.parse(localStorage.getItem(CFG.LS_H)||'[]');}catch(e){return[];}}
+};
+
+/* ── PAGINATION ENGINE ── */
+const PAG = {
+  // Slice a dataset for the current page; clamps page if out of range
+  slice(key, data) {
+    const s = STATE.pag[key];
+    const total = data.length;
+    const pages = Math.max(1, Math.ceil(total / s.size));
+    if (s.page > pages) s.page = pages; // clamp
+    if (s.page < 1) s.page = 1;
+    const start = (s.page - 1) * s.size;
+    return { rows: data.slice(start, start + s.size), total, start: total ? start+1 : 0, end: Math.min(start+s.size, total), pages, page: s.page };
+  },
+
+  // Navigate to page p for key, persist, re-render
+  goto(key, p) {
+    STATE.pag[key].page = p;
+    STORAGE.save();
+    PAG._rerender(key);
+  },
+
+  // Change rows-per-page for key, reset to page 1, persist, re-render
+  setSize(key, val) {
+    STATE.pag[key].size = parseInt(val);
+    STATE.pag[key].page = 1;
+    STORAGE.save();
+    PAG._rerender(key);
+  },
+
+  // Reset page to 1 (called on search/filter change)
+  reset(key) { STATE.pag[key].page = 1; },
+
+  // Map key → render function (set during init)
+  _fns: {},
+  reg(key, fn) { this._fns[key] = fn; },
+  _rerender(key) { if (this._fns[key]) this._fns[key](); },
+
+  // Build page-number array with ellipsis
+  _nums(cur, total) {
+    if (total <= 7) return Array.from({length: total}, (_, i) => i+1);
+    if (cur <= 4)       return [1,2,3,4,5,'…',total];
+    if (cur >= total-3) return [1,'…',total-4,total-3,total-2,total-1,total];
+    return [1,'…',cur-1,cur,cur+1,'…',total];
+  },
+
+  // Render complete footer into element `elId`
+  render(elId, key, sliceResult) {
+    const el = $(elId); if (!el) return;
+    const {total, start, end, pages, page, size} = {...sliceResult, size: STATE.pag[key].size};
+    const disabled = v => v ? ' disabled' : '';
+
+    const btn = (lbl, p, active=false, dis=false, title='') =>
+      `<button class="pg-b${active?' active':''}${String(lbl).length>2?' wide':''}"
+        onclick="PAG.goto('${key}',${p})"
+        ${dis||active?'disabled':''} title="${title}">${lbl}</button>`;
+
+    const nums = this._nums(page, pages).map(n =>
+      n==='…' ? `<span class="pg-ellipsis">···</span>`
+               : btn(n, n, n===page, false, `Page ${n}`)
+    ).join('');
+
+    el.innerHTML = `
+      <div class="pg-info">
+        Showing <strong>${start}–${end}</strong> of <strong>${total}</strong> record${total!==1?'s':''}
+      </div>
+      <div class="pg-ctrl">
+        ${btn('⟪',1,false,page===1,'First page')}
+        ${btn('‹ Prev',page-1,false,page===1,'Previous page')}
+        ${nums}
+        ${btn('Next ›',page+1,false,page===pages,'Next page')}
+        ${btn('⟫',pages,false,page===pages,'Last page')}
+        <span class="pg-sep"></span>
+        <label class="pg-goto">Go to
+          <input class="pg-goto-inp" type="number" min="1" max="${pages}" value="${page}"
+            onkeydown="if(event.key==='Enter'){const v=parseInt(this.value);if(v>=1&&v<=${pages})PAG.goto('${key}',v);}"
+            onblur="const v=parseInt(this.value);if(v>=1&&v<=${pages}&&v!==${page})PAG.goto('${key}',v);">
+          <span>of&nbsp;${pages}</span>
+        </label>
+        <label class="pg-rpp">Rows&nbsp;
+          <select class="pg-rpp-sel" onchange="PAG.setSize('${key}',this.value)">
+            ${[25,50,100,250].map(v=>`<option value="${v}"${v===size?' selected':''}>${v}</option>`).join('')}
+          </select>
+        </label>
+      </div>`;
+  }
+};
+
+/* ── PARSER ── */
+const PARSER={
+  parse(wb){
+    const dm={};
+    CFG.DEPTS.forEach(dept=>{
+      if(!wb.Sheets[dept])return;
+      XLSX.utils.sheet_to_json(wb.Sheets[dept],{header:1,defval:''}).slice(3).forEach(row=>{
+        const n=String(row[0]||'').trim();
+        if(n&&!isSerial(row[0])&&n!=='00AA'&&n.length>1)dm[n.toLowerCase()]=dept;
+      });
+    });
+    let resources=[],monthSet=new Set();
+    if(wb.Sheets['ALL']){resources=this._sheet(wb.Sheets['ALL'],dm,monthSet);}
+    if(!resources.length){
+      CFG.DEPTS.forEach(dept=>{
+        if(!wb.Sheets[dept])return;
+        this._sheet(wb.Sheets[dept],dm,monthSet,dept).forEach(r=>{
+          if(!resources.find(x=>x.name.toLowerCase()===r.name.toLowerCase()))resources.push(r);
+        });
+      });
+    }
+    let months=Array.from(monthSet).sort((a,b)=>m2d(a)-m2d(b));
+    if(!months.length)months=CFG.MO.map(m=>`${m} 2026`);
+    return{resources,months};
+  },
+  _sheet(sheet,dm,monthSet,forceDept){
+    const rows=XLSX.utils.sheet_to_json(sheet,{header:1,defval:''});
+    let hRow=0;
+    for(let r=0;r<Math.min(6,rows.length);r++){if(rows[r].some(v=>isSerial(v))){hRow=r;break;}}
+    const mCols=[];
+    rows[hRow].forEach((v,c)=>{
+      if(isSerial(v)){const lbl=exMonthLbl(v);if(lbl&&!mCols.find(m=>m.lbl===lbl)){mCols.push({lbl,bc:c,cc:c+1,pc:c+2});monthSet.add(lbl);}}
+    });
+    const res=[];
+    for(let r=hRow+2;r<rows.length;r++){
+      const row=rows[r],name=String(row[0]||'').trim();
+      if(!name||isSerial(row[0])||name==='00AA'||name.length<2)continue;
+      if(/resource\s*names?/i.test(name)||/^#/.test(name))continue;
+      const dept=forceDept||dm[name.toLowerCase()]||this._gDept(String(row[7]||''));
+      const months={};
+      mCols.forEach(mc=>{
+        const bv=row[mc.bc];
+        const billable=(bv===''||bv===null||bv===undefined)?null:(String(bv).toUpperCase()==='NA')?'NA':(isNaN(parseFloat(bv))?null:parseFloat(bv));
+        months[mc.lbl]={billable,client:String(row[mc.cc]||'').trim(),project:String(row[mc.pc]||'').trim()};
+      });
+      const exitVal=row[row.length-3];
+      res.push({id:Date.now()+res.length,name,dept,
+        doj:isSerial(row[1])?exJsDate(row[1]):null,
+        exp:parseFloat(row[2])||0,yop:row[3]||'',
+        osiYoe:parseFloat(row[4])||0,beforeOsi:parseFloat(row[5])||0,
+        desig:String(row[6]||'').trim(),platform:String(row[7]||'').trim(),
+        platform2:String(row[8]||'').trim(),
+        exitDate:isSerial(exitVal)?exJsDate(exitVal):null,
+        remarks:String(row[row.length-2]||'').trim(),
+        utiComments:String(row[row.length-1]||'').trim(),
+        replStatus:'',missing:false,months});
+    }
+    return res;
+  },
+  _gDept(p){p=p.toLowerCase();if(p.includes('.net')||p.includes('sharepoint'))return'DNET';if(p.includes('android')||p.includes('ios')||p.includes('flutter')||p.includes('unity'))return'MOBL';if(p.includes('php')||p.includes('python'))return'PPR';return'JAVA';}
+};
+
+/* ── MERGER ── */
+const MERGER={
+  merge(existing,incoming){
+    const s={updated:0,added:0,missing:0,utilChanges:0};
+    const inMap=new Map(incoming.map(r=>[rKey(r),r]));
+    const exMap=new Map(existing.map(r=>[rKey(r),r]));
+    existing.forEach(r=>{if(!inMap.has(rKey(r))){r.missing=true;s.missing++;}});
+    incoming.forEach(r=>{
+      const key=rKey(r);
+      if(exMap.has(key)){const ex=exMap.get(key);const c=this._merge(ex,r);if(c.util)s.utilChanges++;if(c.any){s.updated++;ex.missing=false;}}
+      else{existing.push({...r,id:Date.now()+Math.random()});s.added++;}
+    });
+    return s;
+  },
+  _merge(ex,inc){
+    const c={any:false,util:false};
+    ['desig','platform','platform2','remarks','utiComments','replStatus'].forEach(f=>{if(inc[f]&&(inc[f]||'')!==(ex[f]||'')){ex[f]=inc[f];c.any=true;}});
+    if(inc.exitDate&&!ex.exitDate){ex.exitDate=inc.exitDate;c.any=true;}
+    if(inc.exp&&inc.exp!==ex.exp){ex.exp=inc.exp;c.any=true;}
+    Object.entries(inc.months||{}).forEach(([m,d])=>{
+      const e=ex.months[m];
+      if(!e){ex.months[m]=d;c.any=c.util=true;return;}
+      if(d.billable!==e.billable||d.client!==e.client||d.project!==e.project){ex.months[m]=d;c.any=c.util=true;}
+    });
+    return c;
+  }
+};
+
+/* ── UPLOAD ── */
+function selectMode(mode){
+  STATE.uploadMode=mode;
+  $$('.uopt').forEach(el=>el.classList.remove('selected'));
+  $('uopt'+mode[0].toUpperCase()+mode.slice(1)).classList.add('selected');
 }
 
-function isExcelSerial(val) {
-  return typeof val === 'number' && val > 40000 && val < 50000;
+const UPLOAD={
+  init(){
+    $('fileInput').onchange=e=>{const f=e.target.files[0];if(f)this.process(f);e.target.value='';};
+    const bindDrop=(el,click=true)=>{
+      if(!el)return;
+      if(click)el.onclick=()=>$('fileInput').click();
+      el.ondragover=e=>{e.preventDefault();el.classList.add('drag-over');};
+      el.ondragleave=()=>el.classList.remove('drag-over');
+      el.ondrop=e=>{e.preventDefault();el.classList.remove('drag-over');const f=e.dataTransfer.files[0];if(f)this.process(f);};
+    };
+    bindDrop($('mdDrop'));
+  },
+  open(){openModal('mdUpload');},
+  process(file){
+    closeModal('mdUpload');
+    showToast('⏳ Parsing file…');
+    const reader=new FileReader();
+    reader.onload=e=>{
+      try{
+        const wb=XLSX.read(e.target.result,{type:'array'});
+        const{resources,months}=PARSER.parse(wb);
+        if(!resources.length){showToast('⚠️ No resources found','warn');return;}
+        let summary;
+        if(STATE.uploadMode==='merge'&&STATE.resources.length>0){
+          months.forEach(m=>{if(!STATE.months.includes(m))STATE.months.push(m);});
+          STATE.months.sort((a,b)=>m2d(a)-m2d(b));
+          summary=MERGER.merge(STATE.resources,resources);
+        }else{
+          STATE.resources=resources;STATE.months=months;
+          summary={updated:resources.length,added:0,missing:0,utilChanges:0};
+        }
+        STATE.selectedMonth=STATE.months[STATE.months.length-1]||'';
+        $('sbFile').textContent=file.name;$('sbDate').textContent=new Date().toLocaleDateString();
+        STORAGE.save();STORAGE.addHist(file.name,summary);
+        refresh();renderHistSidebar();showSummary(summary,file.name);
+      }catch(err){showToast('❌ Error: '+err.message,'err');console.error(err);}
+    };
+    reader.readAsArrayBuffer(file);
+  }
+};
+
+function showSummary(s,fname){
+  $('summaryBody').innerHTML=`<p style="font-size:12px;color:var(--g500);margin-bottom:12px">File: <strong>${fname}</strong></p>
+    <ul class="sum-list">
+      <li><span class="sum-dot" style="background:var(--bm)"></span>${s.updated} resource${s.updated!==1?'s':''} loaded/updated</li>
+      <li><span class="sum-dot" style="background:var(--green)"></span>${s.added} new resource${s.added!==1?'s':''} added</li>
+      <li><span class="sum-dot" style="background:var(--amb)"></span>${s.missing} resource${s.missing!==1?'s':''} missing from upload</li>
+      <li><span class="sum-dot" style="background:var(--pur)"></span>${s.utilChanges} utilization change${s.utilChanges!==1?'s':''} detected</li>
+    </ul>`;
+  openModal('mdSummary');
 }
 
-// ═══════════════════════════════════════════════════════
-// FILE UPLOAD & PARSING
-// ═══════════════════════════════════════════════════════
-const dropZone = document.getElementById('dropZone');
-dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
-dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
-dropZone.addEventListener('drop', e => {
-  e.preventDefault(); dropZone.classList.remove('drag-over');
-  const f = e.dataTransfer.files[0];
-  if (f) processFile(f);
-});
-
-function handleFileUpload(e) {
-  const f = e.target.files[0];
-  if (f) processFile(f);
-}
-
-function processFile(file) {
-  fileName = file.name;
-  const reader = new FileReader();
-  reader.onload = e => {
-    try {
-      const wb = XLSX.read(e.target.result, { type: 'array' });
-      parseWorkbook(wb);
-      document.getElementById('fileNameDisplay').textContent = fileName;
-      document.getElementById('lastUpdated').textContent = new Date().toLocaleDateString();
-      document.getElementById('uploadScreen').style.display = 'none';
-      document.getElementById('appShell').style.display = 'block';
-      refreshAll();
-    } catch(err) {
-      alert('Error reading file: ' + err.message);
+/* ── MODAL ── */
+const MODAL={
+  openAdd(){
+    $('mdResTitle').textContent='Add Resource';$('fEditId').value='';
+    ['fName','fDesig','fPlat','fPlat2','fRemarks','fUtiCmt','fReplSt'].forEach(id=>$(id).value='');
+    ['fExp','fOsiYoe','fBeforeOsi'].forEach(id=>$(id).value='');
+    $('fDoj').value='';$('fExit').value='';$('fDept').value='JAVA';
+    this._buildMthRows({});openModal('mdResource');
+  },
+  openEdit(id){
+    const r=STATE.resources.find(x=>x.id===id);if(!r)return;
+    $('mdResTitle').textContent='Edit Resource';$('fEditId').value=id;
+    $('fName').value=r.name;$('fDept').value=r.dept;$('fPlat').value=r.platform||'';
+    $('fPlat2').value=r.platform2||'';$('fDesig').value=r.desig||'';
+    $('fDoj').value=r.doj?r.doj.toISOString().split('T')[0]:'';
+    $('fExp').value=r.exp||'';$('fOsiYoe').value=r.osiYoe||'';$('fBeforeOsi').value=r.beforeOsi||'';
+    $('fExit').value=r.exitDate?r.exitDate.toISOString().split('T')[0]:'';
+    $('fRemarks').value=r.remarks||'';$('fUtiCmt').value=r.utiComments||'';$('fReplSt').value=r.replStatus||'';
+    this._buildMthRows(r.months||{});openModal('mdResource');
+  },
+  _buildMthRows(ex){
+    const cont=$('mthRows'),hdr=cont.firstElementChild;
+    while(cont.children.length>1)cont.removeChild(cont.lastChild);
+    STATE.months.forEach(m=>{
+      const d=ex[m]||{billable:'',client:'',project:''};
+      const row=document.createElement('div');row.className='mr';
+      row.innerHTML=`<span class="mlbl">${m}</span>
+        <input type="number" data-m="${m}" data-f="billable" placeholder="0–1" step="0.1" min="0" max="1.5" value="${d.billable!==null&&d.billable!==undefined?d.billable:''}">
+        <input type="text" data-m="${m}" data-f="client" placeholder="Client" value="${d.client||''}">
+        <input type="text" data-m="${m}" data-f="project" placeholder="Project" value="${d.project||''}">`;
+      cont.appendChild(row);
+    });
+  },
+  save(){
+    const name=$('fName').value.trim();
+    if(!name){$('fName').classList.add('invalid');showToast('⚠️ Name required','warn');return;}
+    $('fName').classList.remove('invalid');
+    const months={};
+    $$('#mthRows input[data-m]').forEach(inp=>{
+      const m=inp.dataset.m,f=inp.dataset.f;
+      if(!months[m])months[m]={billable:null,client:'',project:''};
+      if(f==='billable')months[m].billable=inp.value!==''?parseFloat(inp.value):null;
+      else months[m][f]=inp.value.trim();
+    });
+    const doj=$('fDoj').value?new Date($('fDoj').value):null;
+    const exit=$('fExit').value?new Date($('fExit').value):null;
+    const eid=parseInt($('fEditId').value);
+    if(eid){
+      const r=STATE.resources.find(x=>x.id===eid);
+      if(r){Object.assign(r,{name,dept:$('fDept').value,platform:$('fPlat').value.trim(),platform2:$('fPlat2').value.trim(),desig:$('fDesig').value.trim(),doj,exp:parseFloat($('fExp').value)||0,osiYoe:parseFloat($('fOsiYoe').value)||0,beforeOsi:parseFloat($('fBeforeOsi').value)||0,exitDate:exit,remarks:$('fRemarks').value.trim(),utiComments:$('fUtiCmt').value.trim(),replStatus:$('fReplSt').value.trim()});Object.assign(r.months,months);showToast('✅ Resource updated','ok');}
+    }else{
+      STATE.resources.push({id:Date.now(),name,dept:$('fDept').value,platform:$('fPlat').value.trim(),platform2:$('fPlat2').value.trim(),desig:$('fDesig').value.trim(),doj,exp:parseFloat($('fExp').value)||0,osiYoe:parseFloat($('fOsiYoe').value)||0,beforeOsi:parseFloat($('fBeforeOsi').value)||0,exitDate:exit,remarks:$('fRemarks').value.trim(),utiComments:$('fUtiCmt').value.trim(),replStatus:$('fReplSt').value.trim(),missing:false,months});
+      showToast('✅ Resource added','ok');
     }
-  };
-  reader.readAsArrayBuffer(file);
-}
-
-function parseWorkbook(wb) {
-  resources = [];
-  const deptMap = {};
-
-  // Parse individual dept sheets to get dept membership
-  const deptSheets = { DNET: 'DNET', JAVA: 'JAVA', PPR: 'PPR', MOBL: 'MOBL' };
-  for (const [dept, sheetName] of Object.entries(deptSheets)) {
-    if (!wb.Sheets[sheetName]) continue;
-    const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { header: 1, defval: '' });
-    // Find data rows (skip header rows - usually first 3 rows are headers)
-    for (let r = 3; r < rows.length; r++) {
-      const row = rows[r];
-      const name = String(row[0] || '').trim();
-      if (name && name !== '0' && !isExcelSerial(row[0])) {
-        deptMap[name.toLowerCase()] = dept;
-      }
+    closeModal('mdResource');STORAGE.save();refresh();
+  },
+  openMonth(){
+    STATE.newMonth=null;
+    const years=[2026,2027,2025];
+    $('mchipCont').innerHTML=years.flatMap(yr=>CFG.MO.map(mo=>{const lbl=`${mo} ${yr}`;const ex=STATE.months.includes(lbl);return`<div class="mchip ${ex?'ex':''}" data-m="${lbl}" onclick="MODAL._pickMonth('${lbl}',${ex})">${lbl}</div>`;})).join('');
+    openModal('mdMonth');
+  },
+  _pickMonth(m,ex){
+    if(ex)return;STATE.newMonth=m;
+    $$('#mchipCont .mchip:not(.ex)').forEach(c=>c.classList.remove('sel'));
+    $('mchipCont').querySelector(`[data-m="${m}"]`).classList.add('sel');
+  },
+  confirmMonth(){
+    const m=STATE.newMonth;if(!m){showToast('⚠️ Select a month','warn');return;}
+    if(!STATE.months.includes(m)){
+      STATE.months.push(m);STATE.months.sort((a,b)=>m2d(a)-m2d(b));
+      STATE.resources.forEach(r=>{if(!r.months[m])r.months[m]={billable:null,client:'',project:''};});
+      STATE.selectedMonth=m;$('monthSel').value=m;
+      STORAGE.save();
     }
+    closeModal('mdMonth');refresh();showToast(`📅 ${m} added`,'ok');
   }
+};
 
-  // Parse ALL sheet
-  const allSheet = wb.Sheets['ALL'];
-  if (!allSheet) {
-    // Try to parse from individual sheets if ALL doesn't exist
-    parseDeptSheets(wb, deptMap);
-    return;
+/* ── CHARTS ── */
+const CHARTS={
+  _d(id){if(STATE.charts[id]){STATE.charts[id].destroy();delete STATE.charts[id];}},
+  donut(id,labels,data,colors){
+    this._d(id);const ctx=$(id).getContext('2d');
+    STATE.charts[id]=new Chart(ctx,{type:'doughnut',data:{labels,datasets:[{data,backgroundColor:colors,borderWidth:0,hoverOffset:5}]},
+      options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{position:'bottom',labels:{font:{size:10},padding:9,usePointStyle:true}}}}});
+  },
+  bar(id,labels,data,colors){
+    this._d(id);const ctx=$(id).getContext('2d');
+    STATE.charts[id]=new Chart(ctx,{type:'bar',data:{labels,datasets:[{label:'Billable %',data,backgroundColor:colors,borderRadius:5,borderSkipped:false}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+        scales:{y:{max:100,grid:{color:'#f1f5f9'},ticks:{callback:v=>v+'%',font:{size:10}}},x:{grid:{display:false},ticks:{font:{size:11,weight:'600'}}}}}});
+  },
+  line(id,labels,data){
+    this._d(id);const ctx=$(id).getContext('2d');
+    STATE.charts[id]=new Chart(ctx,{type:'line',data:{labels,datasets:[{label:'Resignations',data,borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,.1)',fill:true,tension:.4,pointRadius:4}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+        scales:{y:{beginAtZero:true,ticks:{stepSize:1,font:{size:10}}},x:{ticks:{font:{size:10}}}}}});
   }
+};
 
-  const rows = XLSX.utils.sheet_to_json(allSheet, { header: 1, defval: '' });
+/* ── RENDERERS ── */
+function renderDashboard(){
+  const m=activeMonth(),active=activeRes(m);
+  const bill=active.filter(r=>isBill(r,m)),nb=active.filter(r=>isNB(r,m));
+  const nbGt2=nb.filter(r=>r.exp>2),nbLt2=nb.filter(r=>r.exp<=2);
+  const resigned=STATE.resources.filter(r=>isResigned(r));
+  const now=new Date(),yr=now.getFullYear();
+  const curMo=now.toLocaleDateString('en-US',{month:'short',year:'numeric'});
+  const rMo=resigned.filter(r=>resignMo(r)===curMo).length;
+  const rYr=resigned.filter(r=>r.exitDate&&r.exitDate.getFullYear()===yr).length;
+  const t=active.length;
+  const hasData=STATE.resources.length>0;
 
-  // Find month columns from header rows
-  // Row 0: column numbers, Row 1: field names + month serials, Row 2: sub-headers
-  let monthCols = []; // [{col, label, billCol, clientCol, projectCol}]
-  let headerRow = null;
-  let subHeaderRow = null;
+  $('statsGrid').innerHTML=[
+    {cl:'bl',lb:'Total Resources',v:t,s:'Active this period'},
+    {cl:'gr',lb:'Billable',v:bill.length,s:`${t?(bill.length/t*100).toFixed(1):0}% utilization`},
+    {cl:'re',lb:'Non-Billable',v:nb.length,s:`${t?(nb.length/t*100).toFixed(1):0}% of team`},
+    {cl:'or',lb:'NB · Exp > 2 yrs',v:nbGt2.length,s:'Experienced bench'},
+    {cl:'am',lb:'NB · Exp ≤ 2 yrs',v:nbLt2.length,s:'Junior bench'},
+    {cl:'pu',lb:'Resignations This Month',v:rMo,s:'Current month exits'},
+    {cl:'te',lb:'Resignations This Year',v:rYr,s:`${yr} total exits`}
+  ].map(s=>`<div class="stat-card ${s.cl}${!hasData?' skeleton':''}"><div class="sl">${s.lb}</div><div class="sv">${s.v}</div><div class="ss">${s.s}</div></div>`).join('');
 
-  // Find the row with date serials
-  for (let r = 0; r < Math.min(5, rows.length); r++) {
-    const row = rows[r];
-    const hasSerial = row.some(v => isExcelSerial(v));
-    if (hasSerial && !headerRow) { headerRow = r; break; }
-  }
-  if (headerRow === null) headerRow = 1;
-  subHeaderRow = headerRow + 1;
+  $('deptGrid').innerHTML=CFG.DEPTS.map(dept=>{
+    const dr=STATE.resources.filter(r=>r.dept===dept&&(!m||r.months[m]!==undefined));
+    const b=dr.filter(r=>isBill(r,m)).length;
+    const pct=dr.length?Math.round(b/dr.length*100):0;
+    return`<div class="dept-card ${STATE.dept===dept?'active':''}" onclick="toggleDept('${dept}')">
+      <div class="dc-nm">${dept}</div><div class="dc-fl">${CFG.DLBL[dept]} Team</div>
+      <div class="dp"><div class="dpf" style="width:${pct}%;background:${CFG.DCOL[dept]}"></div></div>
+      <div class="dc-st"><span>👥 <strong>${dr.length}</strong></span><span>✅ <strong>${b}</strong></span><span>📊 <strong>${pct}%</strong></span></div>
+    </div>`;
+  }).join('');
 
-  // Parse month columns from header row
-  const hRow = rows[headerRow] || [];
-  for (let c = 0; c < hRow.length; c++) {
-    if (isExcelSerial(hRow[c])) {
-      const label = excelSerialToMonthLabel(hRow[c]);
-      if (label && !monthCols.find(m => m.label === label)) {
-        monthCols.push({ label, billCol: c, clientCol: c + 1, projectCol: c + 2 });
-        if (!months.includes(label)) months.push(label);
-      }
-    }
-  }
-
-  // If no months found from header, build default month labels
-  if (months.length === 0) {
-    months = ['Jan 2026','Feb 2026','Mar 2026','Apr 2026','May 2026','Jun 2026',
-              'Jul 2026','Aug 2026','Sep 2026','Oct 2026','Nov 2026','Dec 2026'];
-  }
-
-  // Find exit date / remarks / utilization comments columns
-  const subRow = rows[subHeaderRow] || [];
-  let exitCol = -1, remarksCol = -1, utiCol = -1;
-  for (let c = hRow.length - 10; c < hRow.length + 5; c++) {
-    const v = String(hRow[c] || subRow[c] || '').toLowerCase();
-    if (v.includes('exit') && exitCol === -1) exitCol = c;
-    if (v.includes('remark') && remarksCol === -1) remarksCol = c;
-    if (v.includes('utilization') && utiCol === -1) utiCol = c;
-  }
-
-  // Data starts after sub-header row
-  const dataStart = subHeaderRow + 1;
-  let uid = 1;
-
-  for (let r = dataStart; r < rows.length; r++) {
-    const row = rows[r];
-    const name = String(row[0] || '').trim();
-    if (!name || name === '0' || isExcelSerial(row[0]) || name.startsWith('#')) continue;
-    if (name.toLowerCase() === 'resource names' || name === '00AA') continue;
-
-    const exp = parseFloat(row[2]) || 0;
-    const osiYoe = parseFloat(row[4]) || 0;
-
-    // Determine dept
-    let dept = deptMap[name.toLowerCase()] || '';
-    if (!dept) {
-      // Guess from platform
-      const plat = String(row[7] || '').toLowerCase();
-      if (plat.includes('.net') || plat.includes('sharepoint')) dept = 'DNET';
-      else if (plat.includes('android') || plat.includes('ios') || plat.includes('unity') || plat.includes('ionic')) dept = 'MOBL';
-      else if (plat.includes('php') || plat.includes('python')) dept = 'PPR';
-      else dept = 'JAVA';
-    }
-
-    // Parse monthly data
-    const monthlyData = {};
-    for (const mc of monthCols) {
-      const bill = row[mc.billCol];
-      const billVal = (bill === '' || bill === null || bill === undefined) ? null
-                    : (String(bill).toUpperCase() === 'NA') ? 'NA'
-                    : parseFloat(bill);
-      monthlyData[mc.label] = {
-        billable: billVal,
-        client: String(row[mc.clientCol] || '').trim(),
-        project: String(row[mc.projectCol] || '').trim()
-      };
-    }
-
-    const exitVal = row[exitCol !== -1 ? exitCol : row.length - 3];
-    resources.push({
-      id: uid++,
-      name,
-      doj: row[1] ? excelDateToJS(row[1]) : null,
-      exp,
-      yop: row[3] || '',
-      osiYoe,
-      beforeOsi: parseFloat(row[5]) || 0,
-      desig: String(row[6] || '').trim(),
-      platform: String(row[7] || '').trim(),
-      platform2: String(row[8] || '').trim(),
-      dept,
-      exitDate: isExcelSerial(exitVal) ? excelDateToJS(exitVal) : null,
-      remarks: String(row[remarksCol !== -1 ? remarksCol : row.length - 2] || '').trim(),
-      utiComments: String(row[utiCol !== -1 ? utiCol : row.length - 1] || '').trim(),
-      months: monthlyData
+  if(hasData){
+    CHARTS.donut('cBill',['Billable','Non-Billable'],[bill.length,nb.length],['#10b981','#ef4444']);
+    CHARTS.donut('cNB',['Exp > 2 yrs','Exp ≤ 2 yrs'],[nbGt2.length,nbLt2.length],['#ef4444','#f97316']);
+    const dPcts=CFG.DEPTS.map(dept=>{const dr=STATE.resources.filter(r=>r.dept===dept&&(!m||r.months[m]!==undefined));return dr.length?Math.round(dr.filter(r=>isBill(r,m)).length/dr.length*100):0;});
+    CHARTS.bar('cDept',CFG.DEPTS,dPcts,Object.values(CFG.DCOL));
+  }else{
+    ['cBillWrap','cNBWrap','cDeptWrap'].forEach(wid=>{
+      const w=$(wid);if(!w)return;
+      w.innerHTML=`<div class="chart-ph"><span>📊</span>No data yet</div>`;
     });
   }
 
-  // Set default selected month to most recent populated
-  if (months.length > 0) selectedMonth = months[months.length - 1];
-  populateMonthSelector();
+  $('nbDashCnt').textContent=nb.length;
+  $('dashNBBody').innerHTML=nb.length
+    ?nb.map(r=>{const md=r.months[m]||{};return`<tr>
+        <td>${rl(r)}</td><td>${deptTag(r.dept)}</td><td>${r.desig||'—'}</td>
+        <td>${r.exp.toFixed(1)} yrs</td>
+        <td>${r.exp>2?'<span class="badge br">Exp >2yr</span>':'<span class="badge bo">Exp ≤2yr</span>'}</td>
+        <td>${billBar(bPct(r,m))}</td><td>${trunc(md.client||'—',18)}</td>
+        <td>${rmkCell(r.utiComments)}</td>
+        <td><button class="btn btn-s btn-sm" onclick="MODAL.openEdit(${r.id})">✏</button></td>
+      </tr>`;}).join('')
+    :`<tr><td colspan="9" style="text-align:center;padding:28px;color:var(--g400)">${hasData?'🎉 No non-billable resources for this period!':'Upload an Excel file to view non-billable resources.'}</td></tr>`;
 }
 
-function parseDeptSheets(wb, deptMap) {
-  // Fallback: parse from individual dept sheets
-  const deptSheets = ['DNET', 'JAVA', 'PPR', 'MOBL'];
-  let uid = 1;
-  const monthSet = new Set();
-
-  for (const dept of deptSheets) {
-    if (!wb.Sheets[dept]) continue;
-    const rows = XLSX.utils.sheet_to_json(wb.Sheets[dept], { header: 1, defval: '' });
-    
-    // Find month header row
-    let hRowIdx = 0;
-    for (let r = 0; r < 4; r++) {
-      if (rows[r] && rows[r].some(v => isExcelSerial(v))) { hRowIdx = r; break; }
-    }
-    const hRow = rows[hRowIdx] || [];
-    const monthCols = [];
-    for (let c = 0; c < hRow.length; c++) {
-      if (isExcelSerial(hRow[c])) {
-        const label = excelSerialToMonthLabel(hRow[c]);
-        if (label && !monthCols.find(m => m.label === label)) {
-          monthCols.push({ label, billCol: c, clientCol: c+1, projectCol: c+2 });
-          monthSet.add(label);
-        }
-      }
-    }
-
-    const dataStart = hRowIdx + 2;
-    for (let r = dataStart; r < rows.length; r++) {
-      const row = rows[r];
-      const name = String(row[0] || '').trim();
-      if (!name || name === '0' || isExcelSerial(row[0]) || name === '00AA') continue;
-      if (name.startsWith('#') || name.toLowerCase().includes('resource')) continue;
-
-      const monthlyData = {};
-      for (const mc of monthCols) {
-        const bill = row[mc.billCol];
-        const billVal = (!bill && bill !== 0) ? null : (String(bill).toUpperCase() === 'NA') ? 'NA' : parseFloat(bill);
-        monthlyData[mc.label] = { billable: billVal, client: String(row[mc.clientCol] || '').trim(), project: String(row[mc.projectCol] || '').trim() };
-      }
-
-      // Check if already added
-      if (resources.find(r => r.name.toLowerCase() === name.toLowerCase())) continue;
-
-      resources.push({
-        id: uid++, name, dept,
-        doj: isExcelSerial(row[1]) ? excelDateToJS(row[1]) : null,
-        exp: parseFloat(row[2]) || 0,
-        yop: row[3] || '',
-        osiYoe: parseFloat(row[4]) || 0,
-        beforeOsi: parseFloat(row[5]) || 0,
-        desig: String(row[6] || '').trim(),
-        platform: String(row[7] || '').trim(),
-        platform2: String(row[8] || '').trim(),
-        exitDate: null,
-        remarks: String(row[row.length - 2] || '').trim(),
-        utiComments: String(row[row.length - 1] || '').trim(),
-        months: monthlyData
-      });
-    }
-  }
-
-  months = Array.from(monthSet).sort();
-  if (months.length === 0) months = ['Jan 2026','Feb 2026','Mar 2026','Apr 2026','May 2026'];
-  selectedMonth = months[months.length - 1];
-  populateMonthSelector();
-}
-
-// ═══════════════════════════════════════════════════════
-// COMPUTED GETTERS
-// ═══════════════════════════════════════════════════════
-function getBillable(r, month) {
-  month = month || selectedMonth;
-  if (!month || !r.months[month]) return null;
-  const v = r.months[month].billable;
-  if (v === null || v === undefined || v === '') return null;
-  if (v === 'NA') return 'NA';
-  return parseFloat(v);
-}
-
-function isNonBillable(r, month) {
-  const b = getBillable(r, month);
-  if (b === null || b === 'NA') return false;
-  return b < 0.5;
-}
-
-function isBillable(r, month) {
-  const b = getBillable(r, month);
-  if (b === null || b === 'NA') return false;
-  return b >= 0.5;
-}
-
-function isActive(r, month) {
-  if (r.exitDate && r.exitDate < new Date()) return false;
-  return true;
-}
-
-function getFilteredResources() {
-  return resources.filter(r => !selectedDept || r.dept === selectedDept);
-}
-
-function getActiveResources(month) {
-  month = month || selectedMonth;
-  return getFilteredResources().filter(r => {
-    if (r.exitDate && r.exitDate < new Date()) return false;
-    if (!month) return true;
-    const d = r.months[month];
-    return d !== undefined;
+function renderAll(){
+  const srch=($('srchAll').value||'').toLowerCase(),status=$('fStAll').value,m=activeMonth();
+  // persist filters
+  STATE.filters.all={search:srch,status};
+  let data=filtered().filter(r=>{
+    if(srch&&!r.name.toLowerCase().includes(srch)&&!String(r.months[m]?.client||'').toLowerCase().includes(srch)&&!r.platform.toLowerCase().includes(srch)&&!String(r.remarks||'').toLowerCase().includes(srch)&&!String(r.utiComments||'').toLowerCase().includes(srch))return false;
+    if(status==='billable'&&!isBill(r,m))return false;
+    if(status==='nb'&&!isNB(r,m))return false;
+    return true;
   });
+  const sl=PAG.slice('all',data);
+  $('allBody').innerHTML=sl.rows.length?sl.rows.map(r=>{
+    const md=r.months[m]||{},rc=r.missing?'row-m':isResigned(r)?'row-r':'';
+    return`<tr class="${rc}">
+      <td>${rl(r)}${r.missing?'<span class="badge bm" style="margin-left:4px">Missing</span>':''}</td>
+      <td>${deptTag(r.dept)}</td><td>${r.platform||'—'}</td><td>${r.desig||'—'}</td>
+      <td>${r.exp.toFixed(1)}</td><td>${billBar(bPct(r,m))}</td>
+      <td>${trunc(md.client||'—',16)}</td><td>${trunc(md.project||'—',16)}</td>
+      <td class="rmk">${rmkCell(r.remarks)}</td>
+      <td class="rmk">${rmkCell(r.utiComments)}</td>
+      <td>${statusBadge(r,m)}</td></tr>`;
+  }).join(''):'<tr><td colspan="11" style="text-align:center;padding:32px;color:var(--g400)">No matching resources found</td></tr>';
+  PAG.render('ftAll','all',sl);
 }
 
-function getBillablePct(r, month) {
-  const b = getBillable(r, month);
-  if (b === null || b === 'NA') return null;
-  return Math.min(b, 1) * 100;
+function renderBillable(){
+  const srch=($('srchBill').value||'').toLowerCase(),m=activeMonth();
+  STATE.filters.bill={search:srch};
+  const data=filtered().filter(r=>isBill(r,m)&&(!srch||r.name.toLowerCase().includes(srch)||String(r.months[m]?.client||'').toLowerCase().includes(srch)));
+  const sl=PAG.slice('bill',data);
+  $('billBody').innerHTML=sl.rows.length?sl.rows.map(r=>{const md=r.months[m]||{};return`<tr>
+    <td>${rl(r)}</td><td>${deptTag(r.dept)}</td><td>${r.platform||'—'}</td><td>${r.desig||'—'}</td>
+    <td>${r.exp.toFixed(1)}</td><td>${billBar(bPct(r,m))}</td>
+    <td>${trunc(md.client||'—',18)}</td><td>${trunc(md.project||'—',18)}</td>
+    <td class="rmk">${rmkCell(r.remarks)}</td></tr>`;}).join('')
+    :'<tr><td colspan="9" style="text-align:center;padding:32px;color:var(--g400)">No billable resources found</td></tr>';
+  PAG.render('ftBill','bill',sl);
 }
 
-// ═══════════════════════════════════════════════════════
-// UI HELPERS
-// ═══════════════════════════════════════════════════════
-function deptTag(dept) {
-  const map = { DNET: '.NET', JAVA: 'Java', PPR: 'PHP/Py', MOBL: 'Mobile' };
-  const cls = { DNET: 'tag-dnet', JAVA: 'tag-java', PPR: 'tag-ppr', MOBL: 'tag-mobl' };
-  return `<span class="dept-tag ${cls[dept] || 'tag-java'}">${map[dept] || dept}</span>`;
+function renderNbGt2(){
+  const srch=($('srchNbGt2').value||'').toLowerCase(),m=activeMonth();
+  STATE.filters.nbGt2={search:srch};
+  const data=filtered().filter(r=>isNB(r,m)&&r.exp>2&&(!srch||r.name.toLowerCase().includes(srch)||r.platform.toLowerCase().includes(srch)));
+  const sl=PAG.slice('nbGt2',data);
+  $('nbGt2Body').innerHTML=sl.rows.length?sl.rows.map(r=>{const md=r.months[m]||{};return`<tr>
+    <td>${rl(r)}</td><td>${deptTag(r.dept)}</td><td>${r.platform||'—'}</td><td>${r.desig||'—'}</td>
+    <td><strong>${r.exp.toFixed(1)}</strong></td><td>${r.osiYoe.toFixed(1)}</td>
+    <td>${billBar(bPct(r,m))}</td><td>${trunc(md.client||'—',16)}</td>
+    <td class="rmk">${rmkCell(r.utiComments)}</td></tr>`;}).join('')
+    :'<tr><td colspan="9" style="text-align:center;padding:32px;color:var(--g400)">✅ No non-billable resources with experience > 2 years</td></tr>';
+  PAG.render('ftNbGt2','nbGt2',sl);
 }
 
-function statusBadge(r, month) {
-  const b = getBillable(r, month);
-  if (b === 'NA') return '<span class="badge badge-gray">Leave</span>';
-  if (b === null) return '<span class="badge badge-gray">No Data</span>';
-  if (b >= 0.5) return '<span class="badge badge-green">Billable</span>';
-  return '<span class="badge badge-red">Non-Billable</span>';
+function renderNbLt2(){
+  const srch=($('srchNbLt2').value||'').toLowerCase(),m=activeMonth();
+  STATE.filters.nbLt2={search:srch};
+  const data=filtered().filter(r=>isNB(r,m)&&r.exp<=2&&(!srch||r.name.toLowerCase().includes(srch)||r.platform.toLowerCase().includes(srch)));
+  const sl=PAG.slice('nbLt2',data);
+  $('nbLt2Body').innerHTML=sl.rows.length?sl.rows.map(r=>{const md=r.months[m]||{};return`<tr>
+    <td>${rl(r)}</td><td>${deptTag(r.dept)}</td><td>${r.platform||'—'}</td><td>${r.desig||'—'}</td>
+    <td><strong>${r.exp.toFixed(1)}</strong></td><td>${r.osiYoe.toFixed(1)}</td>
+    <td>${billBar(bPct(r,m))}</td><td>${trunc(md.client||'—',16)}</td>
+    <td class="rmk">${rmkCell(r.utiComments)}</td></tr>`;}).join('')
+    :'<tr><td colspan="9" style="text-align:center;padding:32px;color:var(--g400)">✅ No non-billable resources with experience ≤ 2 years</td></tr>';
+  PAG.render('ftNbLt2','nbLt2',sl);
 }
 
-function billableBar(pct) {
-  if (pct === null) return '<span class="badge badge-gray">—</span>';
-  const color = pct >= 50 ? 'var(--green)' : pct > 0 ? 'var(--orange)' : 'var(--red)';
-  return `<div class="bill-bar-wrap"><div class="bill-bar" style="width:${Math.min(pct,100)}%;background:${color}"></div></div><span style="font-size:12px">${pct.toFixed(0)}%</span>`;
+function renderResignations(){
+  const srch=($('srchResign').value||'').toLowerCase();
+  const fMo=$('fResignMo').value,fYr=parseInt($('fResignYr').value)||0,fDp=$('fResignDp').value;
+  STATE.filters.resign={search:srch,mo:fMo,yr:fYr?String(fYr):'',dept:fDp};
+  const allR=STATE.resources.filter(r=>isResigned(r));
+  const yr=new Date().getFullYear(),curMo=new Date().toLocaleDateString('en-US',{month:'short',year:'numeric'});
+
+  const data=allR.filter(r=>{
+    if(fMo&&resignMo(r)!==fMo)return false;
+    if(fYr&&r.exitDate.getFullYear()!==fYr)return false;
+    if(fDp&&r.dept!==fDp)return false;
+    if(srch&&!r.name.toLowerCase().includes(srch)&&!String(r.remarks||'').toLowerCase().includes(srch))return false;
+    return true;
+  });
+
+  $('resignStats').innerHTML=[
+    {cl:'re',lb:'Total Resignations',v:allR.length,s:'All time'},
+    {cl:'or',lb:'This Year',v:allR.filter(r=>r.exitDate.getFullYear()===yr).length,s:String(yr)},
+    {cl:'am',lb:'This Month',v:allR.filter(r=>resignMo(r)===curMo).length,s:'Current month'},
+    {cl:'pu',lb:'Pending Replacement',v:allR.filter(r=>!r.replStatus||r.replStatus.toLowerCase().includes('not started')).length,s:'No replacement yet'}
+  ].map(s=>`<div class="stat-card ${s.cl}"><div class="sl">${s.lb}</div><div class="sv">${s.v}</div><div class="ss">${s.s}</div></div>`).join('');
+
+  const byMo={};allR.forEach(r=>{const l=resignMo(r);if(l)byMo[l]=(byMo[l]||0)+1;});
+  const sorted=Object.entries(byMo).sort((a,b)=>m2d(a[0])-m2d(b[0]));
+  CHARTS.line('cResignTrend',sorted.map(s=>s[0]),sorted.map(s=>s[1]));
+  CHARTS.donut('cResignDept',CFG.DEPTS,CFG.DEPTS.map(d=>allR.filter(r=>r.dept===d).length),Object.values(CFG.DCOL));
+
+  const sl=PAG.slice('resign',data);
+  $('resignBody').innerHTML=sl.rows.length?sl.rows.map(r=>`<tr class="row-r">
+    <td>${rl(r)}</td><td>${deptTag(r.dept)}</td><td>${r.desig||'—'}</td>
+    <td>${fmtDate(r.exitDate)}</td>
+    <td>${r.exitDate?fmtDate(new Date(r.exitDate.getTime()-86400000)):'—'}</td>
+    <td class="rmk">${rmkCell(r.remarks)}</td>
+    <td><input type="text" class="inp" style="font-size:11px;padding:3px 7px" value="${r.replStatus||''}" placeholder="Not started…" onchange="updateRepl(${r.id},this.value)"></td>
+    <td><button class="btn btn-s btn-sm" onclick="MODAL.openEdit(${r.id})">✏</button></td>
+  </tr>`).join('')
+  :'<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--g400)">No resignations for the selected filters</td></tr>';
+  PAG.render('ftResign','resign',sl);
 }
 
-function truncate(s, n=30) {
-  s = String(s || '');
-  return s.length > n ? s.substring(0, n) + '…' : s;
-}
+function updateRepl(id,val){const r=STATE.resources.find(x=>x.id===id);if(r){r.replStatus=val;STORAGE.save();}}
 
-function showView(name) {
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById('view-' + name).classList.add('active');
-  const titles = {
-    dashboard: 'Dashboard', allResources: 'All Resources', billable: 'Billable Resources',
-    nbGt2: 'Non-Billable · Experience > 2 Years', nbLt2: 'Non-Billable · Experience ≤ 2 Years'
-  };
-  document.getElementById('headerTitle').textContent = titles[name] || name;
-  event.currentTarget && event.currentTarget.classList.add('active');
+function toggleDept(d){STATE.dept=STATE.dept===d?'':d;$('deptSel').value=STATE.dept;STORAGE.save();refresh();}
+
+/* ── EXPORT ── */
+const EXPORT={
+  _rows(list,m){
+    const hdr=['Resource','Dept','DOJ','Exp','OSI YOE','Before OSI','Designation','Platform','Sec.Platform'];
+    STATE.months.forEach(mo=>hdr.push(`${mo} %Bill`,`${mo} Client`,`${mo} Project`));
+    hdr.push('Exit Date','Remarks','Utilization Comments','Replacement Status','Status');
+    return[hdr,...list.map(r=>{
+      const row=[r.name,r.dept,r.doj?fmtDate(r.doj):'',r.exp,r.osiYoe,r.beforeOsi,r.desig,r.platform,r.platform2||''];
+      STATE.months.forEach(mo=>{const d=r.months[mo]||{};row.push(d.billable!==null&&d.billable!==undefined?d.billable:'',d.client||'',d.project||'');});
+      row.push(r.exitDate?fmtDate(r.exitDate):'',r.remarks||'',r.utiComments||'',r.replStatus||'',
+        isResigned(r)?'Resigned':isBill(r,m)?'Billable':isNB(r,m)?'Non-Billable':'No Data');
+      return row;
+    })];
+  },
+  _style(ws,n){
+    const r=XLSX.utils.decode_range(ws['!ref']||'A1');
+    const HS={font:{bold:true,color:{rgb:'FFFFFF'},sz:10},fill:{fgColor:{rgb:'0F2044'}},alignment:{horizontal:'center'}};
+    for(let c=r.s.c;c<=r.e.c;c++){const cell=ws[XLSX.utils.encode_cell({r:0,c})];if(cell)cell.s=HS;}
+    const sc=r.e.c;
+    for(let row=1;row<=n;row++){
+      const cell=ws[XLSX.utils.encode_cell({r:row,c:sc})];if(!cell)continue;
+      const s=cell.v==='Billable'?{fill:{fgColor:{rgb:'D1FAE5'}},font:{color:{rgb:'065F46'}}}:cell.v==='Non-Billable'?{fill:{fgColor:{rgb:'FEE2E2'}},font:{color:{rgb:'991B1B'}}}:cell.v==='Resigned'?{fill:{fgColor:{rgb:'FFEDD5'}},font:{color:{rgb:'7C2D12'}}}:null;
+      if(s){for(let c=r.s.c;c<=r.e.c;c++){const cl=ws[XLSX.utils.encode_cell({r:row,c})];if(cl)cl.s=s;}}
+    }
+    ws['!cols']=[];for(let c=r.s.c;c<=r.e.c;c++){let mx=8;for(let row=0;row<=n;row++){const v=String(ws[XLSX.utils.encode_cell({r:row,c})]?.v||'');mx=Math.max(mx,Math.min(v.length+2,32));}ws['!cols'].push({wch:mx});}
+    ws['!freeze']={xSplit:0,ySplit:1};ws['!autofilter']={ref:ws['!ref']};
+  },
+  all(){
+    const m=activeMonth(),ts=new Date().toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    const wb=XLSX.utils.book_new();
+    // Summary
+    const sum=[['Resource Utilization Report'],[`Exported on: ${ts}`],[`Selected Month: ${m||'All'}`],[''],
+      ['Department','Total','Billable','Non-Billable','NB Exp>2','NB Exp≤2','Util%','Resignations'],
+      ...CFG.DEPTS.map(dept=>{
+        const dr=STATE.resources.filter(r=>r.dept===dept&&!isResigned(r)&&(!m||r.months[m]!==undefined));
+        const b=dr.filter(r=>isBill(r,m)).length,nb=dr.filter(r=>isNB(r,m));
+        return[dept,dr.length,b,nb.length,nb.filter(r=>r.exp>2).length,nb.filter(r=>r.exp<=2).length,dr.length?(b/dr.length*100).toFixed(1)+'%':'0%',STATE.resources.filter(r=>r.dept===dept&&isResigned(r)).length];
+      }),
+      ['TOTAL',STATE.resources.filter(r=>!isResigned(r)).length,STATE.resources.filter(r=>isBill(r,m)).length,STATE.resources.filter(r=>isNB(r,m)).length,STATE.resources.filter(r=>isNB(r,m)&&r.exp>2).length,STATE.resources.filter(r=>isNB(r,m)&&r.exp<=2).length,'—',STATE.resources.filter(r=>isResigned(r)).length]
+    ];
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(sum),'Summary');
+    [
+      {n:'All Resources',d:STATE.resources},
+      {n:'Billable',d:STATE.resources.filter(r=>isBill(r,m))},
+      {n:'Non-Billable GT2',d:STATE.resources.filter(r=>isNB(r,m)&&r.exp>2)},
+      {n:'Non-Billable LT2',d:STATE.resources.filter(r=>isNB(r,m)&&r.exp<=2)},
+      {n:'Resignations',d:STATE.resources.filter(r=>isResigned(r))},
+      ...CFG.DEPTS.map(d=>({n:d,d:STATE.resources.filter(r=>r.dept===d)}))
+    ].forEach(({n,d})=>{const rows=this._rows(d,m);const ws=XLSX.utils.aoa_to_sheet(rows);this._style(ws,d.length);XLSX.utils.book_append_sheet(wb,ws,n);});
+    XLSX.writeFile(wb,`Utilization_${new Date().toISOString().slice(0,10)}.xlsx`);
+    showToast('✅ Excel exported','ok');
+  },
+  filtered(type){
+    const m=activeMonth();
+    const map={all:filtered,billable:()=>filtered().filter(r=>isBill(r,m)),nbGt2:()=>filtered().filter(r=>isNB(r,m)&&r.exp>2),nbLt2:()=>filtered().filter(r=>isNB(r,m)&&r.exp<=2),resignations:()=>STATE.resources.filter(r=>isResigned(r))};
+    const data=(map[type]||map.all)();
+    const rows=this._rows(data,m);const ws=XLSX.utils.aoa_to_sheet(rows);this._style(ws,data.length);
+    const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,type);
+    XLSX.writeFile(wb,`${type}_${new Date().toISOString().slice(0,10)}.xlsx`);
+    showToast(`✅ ${data.length} records exported`,'ok');
+  }
+};
+
+/* ── NAV & REFRESH ── */
+const VIEW_TITLES={dashboard:'Dashboard',allResources:'All Resources',billable:'Billable Resources',nbGt2:'Non-Billable · Exp > 2 Years',nbLt2:'Non-Billable · Exp ≤ 2 Years',resignations:'Resignations'};
+
+function showView(name){
+  $$('.view').forEach(v=>v.classList.remove('active'));
+  $$('.nav-item[data-view]').forEach(n=>n.classList.remove('active'));
+  $('view-'+name).classList.add('active');
+  document.querySelector(`.nav-item[data-view="${name}"]`)?.classList.add('active');
+  $('hTitle').textContent=VIEW_TITLES[name]||name;
+  // reset page to 1 when switching views (keep size)
+  const keyMap={allResources:'all',billable:'bill',nbGt2:'nbGt2',nbLt2:'nbLt2',resignations:'resign'};
+  const k=keyMap[name];if(k)STATE.pag[k].page=1;
   renderView(name);
 }
 
-function onMonthChange() {
-  selectedMonth = document.getElementById('monthSelector').value;
-  refreshAll();
+function renderView(name){
+  if(name==='dashboard')renderDashboard();
+  else if(name==='allResources')renderAll();
+  else if(name==='billable')renderBillable();
+  else if(name==='nbGt2')renderNbGt2();
+  else if(name==='nbLt2')renderNbLt2();
+  else if(name==='resignations')renderResignations();
 }
 
-function applyFilters() {
-  selectedDept = document.getElementById('deptFilter').value;
-  refreshAll();
+function refresh(){
+  updateSelectors();updateBadges();
+  const hasData=STATE.resources.length>0;
+  const banner=$('onboardBanner');
+  if(banner)banner.style.display=hasData?'none':'';
+  const name=document.querySelector('.view.active')?.id.replace('view-','')||'dashboard';
+  renderView(name);
+  STORAGE.save();
 }
 
-function populateMonthSelector() {
-  const sel = document.getElementById('monthSelector');
-  sel.innerHTML = '<option value="">All Months (Latest)</option>';
-  months.forEach(m => {
-    const o = document.createElement('option');
-    o.value = m; o.textContent = m;
-    if (m === selectedMonth) o.selected = true;
-    sel.appendChild(o);
-  });
+function updateSelectors(){
+  const sel=$('monthSel'),prev=sel.value;
+  sel.innerHTML='<option value="">Latest Month</option>';
+  STATE.months.forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=m;if(m===STATE.selectedMonth||m===prev)o.selected=true;sel.appendChild(o);});
+  $('deptSel').value=STATE.dept;
+  const allR=STATE.resources.filter(r=>isResigned(r));
+  const rMos=[...new Set(allR.map(r=>resignMo(r)).filter(Boolean))].sort((a,b)=>m2d(a)-m2d(b));
+  const rYrs=[...new Set(allR.filter(r=>r.exitDate).map(r=>r.exitDate.getFullYear()))].sort();
+  $('fResignMo').innerHTML='<option value="">All Months</option>'+rMos.map(m=>`<option value="${m}">${m}</option>`).join('');
+  $('fResignYr').innerHTML='<option value="">All Years</option>'+rYrs.map(y=>`<option value="${y}">${y}</option>`).join('');
 }
 
-function closeModal(id) {
-  document.getElementById(id).classList.remove('open');
+function updateBadges(){
+  const m=activeMonth(),active=activeRes(m),nb=active.filter(r=>isNB(r,m));
+  $('bdgAll').textContent=STATE.resources.length;
+  $('bdgBill').textContent=active.filter(r=>isBill(r,m)).length;
+  $('bdgNbGt2').textContent=nb.filter(r=>r.exp>2).length;
+  $('bdgNbLt2').textContent=nb.filter(r=>r.exp<=2).length;
+  $('bdgResign').textContent=STATE.resources.filter(r=>isResigned(r)).length;
 }
 
-// ═══════════════════════════════════════════════════════
-// REFRESH & RENDER
-// ═══════════════════════════════════════════════════════
-function refreshAll() {
-  updateBadges();
-  renderDashboard();
-  const active = document.querySelector('.view.active');
-  if (active) {
-    const name = active.id.replace('view-', '');
-    renderView(name);
-  }
+function renderHistSidebar(){
+  const h=STORAGE.getHist();if(!h.length){$('sbHist').style.display='none';return;}
+  $('sbHist').style.display='';
+  $('histList').innerHTML=h.slice(0,5).map(h=>{const d=new Date(h.date);return`<div class="hi"><div class="hn">📄 ${h.name}</div><div class="hm">${d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}</div></div>`;}).join('');
 }
 
-function renderView(name) {
-  if (name === 'dashboard') renderDashboard();
-  else if (name === 'allResources') renderAllTable();
-  else if (name === 'billable') renderBillableTable();
-  else if (name === 'nbGt2') renderNbGt2Table();
-  else if (name === 'nbLt2') renderNbLt2Table();
-}
+/* ── INIT ── */
+document.addEventListener('DOMContentLoaded',()=>{
+  const restored=STORAGE.load();
+  if(restored){$('sbFile').textContent='Restored from cache';$('sbDate').textContent=new Date().toLocaleDateString();}
 
-function updateBadges() {
-  const m = selectedMonth || (months.length > 0 ? months[months.length - 1] : '');
-  const active = getActiveResources(m);
-  const nb = active.filter(r => isNonBillable(r, m));
-  const bill = active.filter(r => isBillable(r, m));
-  const nbGt2 = nb.filter(r => r.exp > 2);
-  const nbLt2 = nb.filter(r => r.exp <= 2);
+  // Register PAG render functions (enables PAG.goto/setSize to call correct fn)
+  PAG.reg('all',   renderAll);
+  PAG.reg('bill',  renderBillable);
+  PAG.reg('nbGt2', renderNbGt2);
+  PAG.reg('nbLt2', renderNbLt2);
+  PAG.reg('resign',renderResignations);
 
-  document.getElementById('badgeAll').textContent = resources.length;
-  document.getElementById('badgeBillable').textContent = bill.length;
-  document.getElementById('badgeNbGt2').textContent = nbGt2.length;
-  document.getElementById('badgeNbLt2').textContent = nbLt2.length;
-}
+  // Restore persisted filter/search values to DOM inputs
+  const f=STATE.filters;
+  if($('srchAll'))   $('srchAll').value   = f.all.search   || '';
+  if($('fStAll'))    $('fStAll').value    = f.all.status   || '';
+  if($('srchBill'))  $('srchBill').value  = f.bill.search  || '';
+  if($('srchNbGt2')) $('srchNbGt2').value = f.nbGt2.search || '';
+  if($('srchNbLt2')) $('srchNbLt2').value = f.nbLt2.search || '';
+  if($('srchResign'))$('srchResign').value= f.resign.search|| '';
 
-function renderDashboard() {
-  const m = selectedMonth || (months.length > 0 ? months[months.length - 1] : '');
-  const active = getActiveResources(m);
-  const bill = active.filter(r => isBillable(r, m));
-  const nb = active.filter(r => isNonBillable(r, m));
-  const nbGt2 = nb.filter(r => r.exp > 2);
-  const nbLt2 = nb.filter(r => r.exp <= 2);
-  const total = active.length;
+  refresh();renderHistSidebar();
 
-  document.getElementById('statTotal').textContent = total;
-  document.getElementById('statBillable').textContent = bill.length;
-  document.getElementById('statBillablePct').textContent = total ? (bill.length/total*100).toFixed(1) + '% utilization' : '—';
-  document.getElementById('statNB').textContent = nb.length;
-  document.getElementById('statNBPct').textContent = total ? (nb.length/total*100).toFixed(1) + '% of team' : '—';
-  document.getElementById('statNBGt2').textContent = nbGt2.length;
-  document.getElementById('statNBLt2').textContent = nbLt2.length;
-
-  renderDeptCards(m);
-  renderCharts(bill.length, nb.length, nbGt2.length, nbLt2.length, m);
-  renderDashboardNBTable(nb, m);
-}
-
-function renderDeptCards(m) {
-  const depts = ['DNET', 'JAVA', 'PPR', 'MOBL'];
-  const names = { DNET: '.NET Team', JAVA: 'Java Team', PPR: 'PHP/Python', MOBL: 'Mobile' };
-  const colors = { DNET: '#2563eb', JAVA: '#10b981', PPR: '#f59e0b', MOBL: '#8b5cf6' };
-
-  document.getElementById('deptGrid').innerHTML = depts.map(dept => {
-    const dr = resources.filter(r => r.dept === dept && (!m || r.months[m] !== undefined));
-    const bill = dr.filter(r => isBillable(r, m)).length;
-    const pct = dr.length ? (bill / dr.length * 100) : 0;
-    return `
-      <div class="dept-card ${selectedDept === dept ? 'active' : ''}" onclick="toggleDeptFilter('${dept}')">
-        <div class="dept-name">${dept}</div>
-        <div class="dept-full">${names[dept]}</div>
-        <div class="dept-progress">
-          <div class="dept-progress-fill" style="width:${pct}%;background:${colors[dept]}"></div>
-        </div>
-        <div class="dept-stats">
-          <span>👥 <strong>${dr.length}</strong></span>
-          <span>✅ <strong>${bill}</strong> bill</span>
-          <span>📊 <strong>${pct.toFixed(0)}%</strong></span>
-        </div>
-      </div>`;
-  }).join('');
-}
-
-function toggleDeptFilter(dept) {
-  selectedDept = selectedDept === dept ? '' : dept;
-  document.getElementById('deptFilter').value = selectedDept;
-  refreshAll();
-}
-
-function renderCharts(bill, nb, nbGt2, nbLt2, m) {
-  // Billable pie
-  destroyChart('chartBillable');
-  const ctx1 = document.getElementById('chartBillable').getContext('2d');
-  charts.chartBillable = new Chart(ctx1, {
-    type: 'doughnut',
-    data: {
-      labels: ['Billable', 'Non-Billable'],
-      datasets: [{ data: [bill, nb], backgroundColor: ['#10b981', '#ef4444'], borderWidth: 0, hoverOffset: 4 }]
-    },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 12 } } }, cutout: '65%' }
-  });
-
-  // NB breakdown
-  destroyChart('chartNB');
-  const ctx2 = document.getElementById('chartNB').getContext('2d');
-  charts.chartNB = new Chart(ctx2, {
-    type: 'doughnut',
-    data: {
-      labels: ['NB Exp > 2yrs', 'NB Exp ≤ 2yrs'],
-      datasets: [{ data: [nbGt2, nbLt2], backgroundColor: ['#ef4444', '#f97316'], borderWidth: 0, hoverOffset: 4 }]
-    },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 12 } } }, cutout: '65%' }
-  });
-
-  // Dept bar
-  destroyChart('chartDept');
-  const ctx3 = document.getElementById('chartDept').getContext('2d');
-  const depts = ['DNET', 'JAVA', 'PPR', 'MOBL'];
-  const deptPcts = depts.map(dept => {
-    const dr = resources.filter(r => r.dept === dept && (!m || r.months[m] !== undefined));
-    if (!dr.length) return 0;
-    return Math.round(dr.filter(r => isBillable(r, m)).length / dr.length * 100);
-  });
-  charts.chartDept = new Chart(ctx3, {
-    type: 'bar',
-    data: {
-      labels: depts,
-      datasets: [{
-        label: 'Billable %',
-        data: deptPcts,
-        backgroundColor: ['#2563eb', '#10b981', '#f59e0b', '#8b5cf6'],
-        borderRadius: 6, borderSkipped: false
-      }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        y: { max: 100, ticks: { callback: v => v + '%', font: { size: 11 } }, grid: { color: '#f1f5f9' } },
-        x: { grid: { display: false }, ticks: { font: { size: 12, weight: '600' } } }
-      }
-    }
-  });
-}
-
-function destroyChart(id) {
-  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
-}
-
-function renderDashboardNBTable(nbResources, m) {
-  document.getElementById('nbTableCount').textContent = nbResources.length;
-  const tbody = document.getElementById('dashboardNBTable');
-  if (!nbResources.length) {
-    tbody.innerHTML = `<tr><td colspan="9" class="empty-state"><div class="icon">🎉</div><p>No non-billable resources for the selected period!</p></td></tr>`;
-    return;
-  }
-  tbody.innerHTML = nbResources.map(r => {
-    const mData = r.months[m] || {};
-    const billPct = getBillablePct(r, m);
-    return `<tr>
-      <td title="${r.name}">${truncate(r.name, 22)}</td>
-      <td>${deptTag(r.dept)}</td>
-      <td>${r.desig || '—'}</td>
-      <td>${r.exp.toFixed(1)} yrs</td>
-      <td>${r.exp > 2 ? '<span class="badge badge-red">Exp &gt; 2yr</span>' : '<span class="badge badge-orange">Exp ≤ 2yr</span>'}</td>
-      <td>${billableBar(billPct)}</td>
-      <td>${truncate(mData.client, 18) || '—'}</td>
-      <td title="${r.utiComments}">${truncate(r.utiComments, 24) || '—'}</td>
-      <td><button class="btn btn-secondary btn-sm" onclick="openEditModal(${r.id})">✏ Edit</button></td>
-    </tr>`;
-  }).join('');
-}
-
-function renderAllTable() {
-  const search = document.getElementById('searchAll').value.toLowerCase();
-  const status = document.getElementById('filterStatus').value;
-  const m = selectedMonth || (months.length > 0 ? months[months.length - 1] : '');
-
-  let filtered = getFilteredResources().filter(r => {
-    if (search && !r.name.toLowerCase().includes(search) &&
-        !String(r.months[m]?.client || '').toLowerCase().includes(search) &&
-        !r.platform.toLowerCase().includes(search)) return false;
-    if (status === 'billable' && !isBillable(r, m)) return false;
-    if (status === 'nb' && !isNonBillable(r, m)) return false;
-    return true;
-  });
-
-  const page = currentPage.all;
-  const total = filtered.length;
-  const paged = filtered.slice((page-1)*PAGE_SIZE, page*PAGE_SIZE);
-
-  document.getElementById('allTableCount').textContent = `${total} records`;
-  const tbody = document.getElementById('allResourcesTable');
-  if (!paged.length) {
-    tbody.innerHTML = `<tr><td colspan="10" class="empty-state"><div class="icon">🔍</div><p>No resources found</p></td></tr>`;
-  } else {
-    tbody.innerHTML = paged.map(r => {
-      const mData = r.months[m] || {};
-      const billPct = getBillablePct(r, m);
-      return `<tr>
-        <td title="${r.name}">${truncate(r.name, 24)}</td>
-        <td>${deptTag(r.dept)}</td>
-        <td>${r.platform || '—'}</td>
-        <td>${r.desig || '—'}</td>
-        <td>${r.exp.toFixed(1)}</td>
-        <td>${billableBar(billPct)}</td>
-        <td>${truncate(mData.client, 16) || '—'}</td>
-        <td>${truncate(mData.project, 16) || '—'}</td>
-        <td>${statusBadge(r, m)}</td>
-        <td><button class="btn btn-secondary btn-sm" onclick="openEditModal(${r.id})">✏</button></td>
-      </tr>`;
-    }).join('');
-  }
-
-  // Pagination
-  const totalPages = Math.ceil(total / PAGE_SIZE);
-  const pag = document.getElementById('allPagination');
-  pag.innerHTML = '';
-  if (totalPages > 1) {
-    const btn = (label, pg, disabled=false, active=false) => {
-      const b = document.createElement('button');
-      b.className = 'page-btn' + (active ? ' active' : '');
-      b.textContent = label; b.disabled = disabled;
-      b.onclick = () => { currentPage.all = pg; renderAllTable(); };
-      return b;
-    };
-    pag.appendChild(btn('‹', page-1, page===1));
-    for (let i = Math.max(1,page-2); i <= Math.min(totalPages, page+2); i++)
-      pag.appendChild(btn(i, i, false, i===page));
-    pag.appendChild(btn('›', page+1, page===totalPages));
-  }
-}
-
-function renderBillableTable() {
-  const search = document.getElementById('searchBillable').value.toLowerCase();
-  const m = selectedMonth || (months.length > 0 ? months[months.length - 1] : '');
-  const filtered = getFilteredResources().filter(r => {
-    if (!isBillable(r, m)) return false;
-    if (search && !r.name.toLowerCase().includes(search) && !String(r.months[m]?.client||'').toLowerCase().includes(search)) return false;
-    return true;
-  });
-  document.getElementById('billableCount').textContent = `${filtered.length} records`;
-  document.getElementById('billableTable').innerHTML = filtered.map(r => {
-    const mData = r.months[m] || {};
-    return `<tr>
-      <td title="${r.name}">${truncate(r.name, 24)}</td>
-      <td>${deptTag(r.dept)}</td>
-      <td>${r.platform || '—'}</td>
-      <td>${r.desig || '—'}</td>
-      <td>${r.exp.toFixed(1)}</td>
-      <td>${billableBar(getBillablePct(r, m))}</td>
-      <td>${truncate(mData.client, 18) || '—'}</td>
-      <td>${truncate(mData.project, 18) || '—'}</td>
-      <td><button class="btn btn-secondary btn-sm" onclick="openEditModal(${r.id})">✏</button></td>
-    </tr>`;
-  }).join('');
-}
-
-function renderNbGt2Table() {
-  const search = document.getElementById('searchNbGt2').value.toLowerCase();
-  const m = selectedMonth || (months.length > 0 ? months[months.length - 1] : '');
-  const filtered = getFilteredResources().filter(r => isNonBillable(r, m) && r.exp > 2)
-    .filter(r => !search || r.name.toLowerCase().includes(search) || r.platform.toLowerCase().includes(search));
-  document.getElementById('nbGt2Count').textContent = `${filtered.length} records`;
-  document.getElementById('nbGt2Table').innerHTML = filtered.length
-    ? filtered.map(r => {
-        const mData = r.months[m] || {};
-        return `<tr>
-          <td title="${r.name}">${truncate(r.name, 22)}</td>
-          <td>${deptTag(r.dept)}</td>
-          <td>${r.platform || '—'}</td>
-          <td>${r.desig || '—'}</td>
-          <td><strong>${r.exp.toFixed(1)}</strong></td>
-          <td>${r.osiYoe.toFixed(1)}</td>
-          <td>${billableBar(getBillablePct(r, m))}</td>
-          <td>${truncate(mData.client, 16) || '—'}</td>
-          <td title="${r.utiComments}">${truncate(r.utiComments, 28) || '—'}</td>
-          <td><button class="btn btn-secondary btn-sm" onclick="openEditModal(${r.id})">✏</button></td>
-        </tr>`;
-      }).join('')
-    : `<tr><td colspan="10" class="empty-state"><div class="icon">✅</div><p>No non-billable resources with experience > 2 years</p></td></tr>`;
-}
-
-function renderNbLt2Table() {
-  const search = document.getElementById('searchNbLt2').value.toLowerCase();
-  const m = selectedMonth || (months.length > 0 ? months[months.length - 1] : '');
-  const filtered = getFilteredResources().filter(r => isNonBillable(r, m) && r.exp <= 2)
-    .filter(r => !search || r.name.toLowerCase().includes(search) || r.platform.toLowerCase().includes(search));
-  document.getElementById('nbLt2Count').textContent = `${filtered.length} records`;
-  document.getElementById('nbLt2Table').innerHTML = filtered.length
-    ? filtered.map(r => {
-        const mData = r.months[m] || {};
-        return `<tr>
-          <td title="${r.name}">${truncate(r.name, 22)}</td>
-          <td>${deptTag(r.dept)}</td>
-          <td>${r.platform || '—'}</td>
-          <td>${r.desig || '—'}</td>
-          <td><strong>${r.exp.toFixed(1)}</strong></td>
-          <td>${r.osiYoe.toFixed(1)}</td>
-          <td>${billableBar(getBillablePct(r, m))}</td>
-          <td>${truncate(mData.client, 16) || '—'}</td>
-          <td title="${r.utiComments}">${truncate(r.utiComments, 28) || '—'}</td>
-          <td><button class="btn btn-secondary btn-sm" onclick="openEditModal(${r.id})">✏</button></td>
-        </tr>`;
-      }).join('')
-    : `<tr><td colspan="10" class="empty-state"><div class="icon">✅</div><p>No non-billable resources with experience ≤ 2 years</p></td></tr>`;
-}
-
-// ═══════════════════════════════════════════════════════
-// ADD / EDIT RESOURCE MODAL
-// ═══════════════════════════════════════════════════════
-function openAddResourceModal() {
-  editingId = null;
-  document.getElementById('modalTitle').textContent = 'Add New Resource';
-  document.getElementById('editResourceId').value = '';
-  document.getElementById('fName').value = '';
-  document.getElementById('fDept').value = 'JAVA';
-  document.getElementById('fPlatform').value = '';
-  document.getElementById('fPlatform2').value = '';
-  document.getElementById('fDesig').value = '';
-  document.getElementById('fDoj').value = '';
-  document.getElementById('fExp').value = '';
-  document.getElementById('fOsiYoe').value = '';
-  document.getElementById('fBeforeOsi').value = '';
-  document.getElementById('fExitDate').value = '';
-  document.getElementById('fRemarks').value = '';
-  document.getElementById('fUtiComments').value = '';
-  buildMonthRows({});
-  document.getElementById('resourceModal').classList.add('open');
-}
-
-function openEditModal(id) {
-  const r = resources.find(x => x.id === id);
-  if (!r) return;
-  editingId = id;
-  document.getElementById('modalTitle').textContent = 'Edit Resource';
-  document.getElementById('editResourceId').value = id;
-  document.getElementById('fName').value = r.name;
-  document.getElementById('fDept').value = r.dept;
-  document.getElementById('fPlatform').value = r.platform;
-  document.getElementById('fPlatform2').value = r.platform2 || '';
-  document.getElementById('fDesig').value = r.desig;
-  document.getElementById('fDoj').value = r.doj ? r.doj.toISOString().split('T')[0] : '';
-  document.getElementById('fExp').value = r.exp;
-  document.getElementById('fOsiYoe').value = r.osiYoe;
-  document.getElementById('fBeforeOsi').value = r.beforeOsi;
-  document.getElementById('fExitDate').value = r.exitDate ? r.exitDate.toISOString().split('T')[0] : '';
-  document.getElementById('fRemarks').value = r.remarks || '';
-  document.getElementById('fUtiComments').value = r.utiComments || '';
-  buildMonthRows(r.months || {});
-  document.getElementById('resourceModal').classList.add('open');
-}
-
-function buildMonthRows(existingMonths) {
-  const container = document.getElementById('monthRows');
-  const header = container.firstElementChild;
-  while (container.children.length > 1) container.removeChild(container.lastChild);
-
-  months.forEach(m => {
-    const d = existingMonths[m] || { billable: '', client: '', project: '' };
-    const row = document.createElement('div');
-    row.className = 'month-row';
-    row.innerHTML = `
-      <div class="month-label">${m}</div>
-      <input type="number" class="bill-input" data-month="${m}" data-field="billable" placeholder="0-1" step="0.1" min="0" max="1.5" value="${d.billable !== null && d.billable !== undefined ? d.billable : ''}">
-      <input type="text" data-month="${m}" data-field="client" placeholder="Client name" value="${d.client || ''}">
-      <input type="text" data-month="${m}" data-field="project" placeholder="Project name" value="${d.project || ''}">
-    `;
-    container.appendChild(row);
-  });
-}
-
-function saveResource() {
-  const name = document.getElementById('fName').value.trim();
-  if (!name) { alert('Resource name is required'); return; }
-
-  const monthlyData = {};
-  document.querySelectorAll('#monthRows input[data-month]').forEach(inp => {
-    const m = inp.dataset.month;
-    const field = inp.dataset.field;
-    if (!monthlyData[m]) monthlyData[m] = { billable: null, client: '', project: '' };
-    if (field === 'billable') {
-      monthlyData[m].billable = inp.value !== '' ? parseFloat(inp.value) : null;
-    } else {
-      monthlyData[m][field] = inp.value.trim();
-    }
-  });
-
-  const dojVal = document.getElementById('fDoj').value;
-  const exitVal = document.getElementById('fExitDate').value;
-
-  if (editingId) {
-    const r = resources.find(x => x.id === editingId);
-    if (r) {
-      r.name = name;
-      r.dept = document.getElementById('fDept').value;
-      r.platform = document.getElementById('fPlatform').value.trim();
-      r.platform2 = document.getElementById('fPlatform2').value.trim();
-      r.desig = document.getElementById('fDesig').value.trim();
-      r.doj = dojVal ? new Date(dojVal) : null;
-      r.exp = parseFloat(document.getElementById('fExp').value) || 0;
-      r.osiYoe = parseFloat(document.getElementById('fOsiYoe').value) || 0;
-      r.beforeOsi = parseFloat(document.getElementById('fBeforeOsi').value) || 0;
-      r.exitDate = exitVal ? new Date(exitVal) : null;
-      r.remarks = document.getElementById('fRemarks').value.trim();
-      r.utiComments = document.getElementById('fUtiComments').value.trim();
-      Object.assign(r.months, monthlyData);
-    }
-  } else {
-    const newId = resources.length ? Math.max(...resources.map(r => r.id)) + 1 : 1;
-    resources.push({
-      id: newId, name,
-      dept: document.getElementById('fDept').value,
-      platform: document.getElementById('fPlatform').value.trim(),
-      platform2: document.getElementById('fPlatform2').value.trim(),
-      desig: document.getElementById('fDesig').value.trim(),
-      doj: dojVal ? new Date(dojVal) : null,
-      exp: parseFloat(document.getElementById('fExp').value) || 0,
-      osiYoe: parseFloat(document.getElementById('fOsiYoe').value) || 0,
-      beforeOsi: parseFloat(document.getElementById('fBeforeOsi').value) || 0,
-      exitDate: exitVal ? new Date(exitVal) : null,
-      remarks: document.getElementById('fRemarks').value.trim(),
-      utiComments: document.getElementById('fUtiComments').value.trim(),
-      months: monthlyData
-    });
-  }
-
-  closeModal('resourceModal');
-  refreshAll();
-}
-
-// ═══════════════════════════════════════════════════════
-// ADD MONTH MODAL
-// ═══════════════════════════════════════════════════════
-const ALL_MONTHS = [
-  'Jan 2026','Feb 2026','Mar 2026','Apr 2026','May 2026','Jun 2026',
-  'Jul 2026','Aug 2026','Sep 2026','Oct 2026','Nov 2026','Dec 2026',
-  'Jan 2027','Feb 2027','Mar 2027','Apr 2027','May 2027','Jun 2027',
-  'Jul 2027','Aug 2027','Sep 2027','Oct 2027','Nov 2027','Dec 2027'
-];
-
-function openAddMonthModal() {
-  selectedNewMonth = null;
-  const chips = document.getElementById('monthChips');
-  chips.innerHTML = ALL_MONTHS.map(m => {
-    const exists = months.includes(m);
-    return `<div class="month-chip ${exists ? 'exists' : ''}" onclick="selectNewMonth('${m}', ${exists})">${m}</div>`;
-  }).join('');
-  document.getElementById('addMonthModal').classList.add('open');
-}
-
-function selectNewMonth(m, exists) {
-  if (exists) return;
-  selectedNewMonth = m;
-  document.querySelectorAll('#monthChips .month-chip:not(.exists)').forEach(c => c.classList.remove('selected'));
-  event.currentTarget.classList.add('selected');
-}
-
-function confirmAddMonth() {
-  if (!selectedNewMonth) { alert('Please select a month'); return; }
-  if (!months.includes(selectedNewMonth)) {
-    months.push(selectedNewMonth);
-    months.sort((a, b) => new Date('1 ' + a) - new Date('1 ' + b));
-    // Add empty data for all resources
-    resources.forEach(r => {
-      if (!r.months[selectedNewMonth]) {
-        r.months[selectedNewMonth] = { billable: null, client: '', project: '' };
-      }
-    });
-    selectedMonth = selectedNewMonth;
-    populateMonthSelector();
-    document.getElementById('monthSelector').value = selectedMonth;
-    refreshAll();
-  }
-  closeModal('addMonthModal');
-}
-
-// ═══════════════════════════════════════════════════════
-// EXPORT TO EXCEL
-// ═══════════════════════════════════════════════════════
-function exportToExcel() {
-  const wb = XLSX.utils.book_new();
-
-  // Helper: build sheet data
-  function buildSheetData(rList, sheetTitle) {
-    const headers = ['Resource Name', 'DOJ', 'Exp', 'OSI YOE', 'Before OSI', 'Designation', 'Platform', 'Sec. Platform'];
-    months.forEach(m => { headers.push(m + ' %Bill', m + ' Client', m + ' Project'); });
-    headers.push('Exit Date', 'Remarks', 'Utilization Comments');
-
-    const rows = [headers];
-    rList.forEach(r => {
-      const row = [
-        r.name,
-        r.doj ? r.doj.toLocaleDateString() : '',
-        r.exp, r.osiYoe, r.beforeOsi, r.desig, r.platform, r.platform2 || ''
-      ];
-      months.forEach(m => {
-        const d = r.months[m] || {};
-        row.push(d.billable !== null && d.billable !== undefined ? d.billable : '', d.client || '', d.project || '');
-      });
-      row.push(r.exitDate ? r.exitDate.toLocaleDateString() : '', r.remarks || '', r.utiComments || '');
-      rows.push(row);
-    });
-    return rows;
-  }
-
-  // ALL sheet
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(buildSheetData(resources, 'ALL')), 'ALL');
-
-  // Dept sheets
-  ['DNET', 'JAVA', 'PPR', 'MOBL'].forEach(dept => {
-    const dr = resources.filter(r => r.dept === dept);
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(buildSheetData(dr, dept)), dept);
-  });
-
-  const m = selectedMonth || (months.length > 0 ? months[months.length - 1] : '');
-
-  // NB > 2 sheet
-  const nbGt2 = resources.filter(r => isNonBillable(r, m) && r.exp > 2);
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(buildSheetData(nbGt2, 'NB_GT_2')), 'NB_GT_2');
-
-  // NB < 2 sheet
-  const nbLt2 = resources.filter(r => isNonBillable(r, m) && r.exp <= 2);
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(buildSheetData(nbLt2, 'NB_LT_2')), 'NB_LT_2');
-
-  // Summary sheet
-  const summaryData = [
-    ['Department', 'Total', 'Billable', 'Non-Billable', 'NB Exp>2', 'NB Exp≤2', 'Util%'],
-    ...['DNET','JAVA','PPR','MOBL'].map(dept => {
-      const dr = resources.filter(r => r.dept === dept && r.months[m] !== undefined);
-      const bill = dr.filter(r => isBillable(r, m)).length;
-      const nb = dr.filter(r => isNonBillable(r, m));
-      return [dept, dr.length, bill, nb.length, nb.filter(r=>r.exp>2).length, nb.filter(r=>r.exp<=2).length, dr.length ? (bill/dr.length*100).toFixed(1)+'%' : '0%'];
-    }),
-    ['TOTAL', resources.length,
-      resources.filter(r=>isBillable(r,m)).length,
-      resources.filter(r=>isNonBillable(r,m)).length,
-      resources.filter(r=>isNonBillable(r,m)&&r.exp>2).length,
-      resources.filter(r=>isNonBillable(r,m)&&r.exp<=2).length,
-      resources.filter(r=>r.months[m]!==undefined).length ?
-        (resources.filter(r=>isBillable(r,m)).length/resources.filter(r=>r.months[m]!==undefined).length*100).toFixed(1)+'%' : '0%'
-    ]
-  ];
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(summaryData), 'Summary');
-
-  const ts = new Date().toISOString().slice(0,10);
-  XLSX.writeFile(wb, `Utilization_${ts}.xlsx`);
-}
-
-function exportFilteredTable(type) {
-  const m = selectedMonth || months[months.length-1];
-  let filtered;
-  if (type === 'nbGt2') filtered = resources.filter(r => isNonBillable(r, m) && r.exp > 2);
-  else filtered = resources.filter(r => isNonBillable(r, m) && r.exp <= 2);
-
-  const headers = ['Resource Name', 'Dept', 'Platform', 'Designation', 'Exp', 'OSI YOE', '% Billable', 'Client', 'Project', 'Comments'];
-  const rows = [headers, ...filtered.map(r => {
-    const d = r.months[m] || {};
-    return [r.name, r.dept, r.platform, r.desig, r.exp, r.osiYoe, d.billable ?? '', d.client || '', d.project || '', r.utiComments || ''];
-  })];
-  const ws = XLSX.utils.aoa_to_sheet(rows);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, type === 'nbGt2' ? 'NB_GT_2' : 'NB_LT_2');
-  XLSX.writeFile(wb, `${type}_${new Date().toISOString().slice(0,10)}.xlsx`);
-}
-
-function resetApp() {
-  if (!confirm('Load a new file? All unsaved changes will be lost.')) return;
-  resources = []; months = []; selectedMonth = ''; selectedDept = '';
-  document.getElementById('appShell').style.display = 'none';
-  document.getElementById('uploadScreen').style.display = 'flex';
-  document.getElementById('fileInput').value = '';
-  Object.values(charts).forEach(c => c.destroy());
-  charts = {};
-}
+  $$('.nav-item[data-view]').forEach(el=>el.addEventListener('click',()=>showView(el.dataset.view)));
+  $('navUpload').addEventListener('click',UPLOAD.open.bind(UPLOAD));
+  $('hUpload').addEventListener('click',UPLOAD.open.bind(UPLOAD));
+  $('navAddRes').addEventListener('click',MODAL.openAdd.bind(MODAL));
+  $('navAddMonth').addEventListener('click',MODAL.openMonth.bind(MODAL));
+  $('navExport').addEventListener('click',EXPORT.all.bind(EXPORT));
+  $('hExport').addEventListener('click',EXPORT.all.bind(EXPORT));
+  UPLOAD.init();
+  $$('.modal-overlay').forEach(ov=>ov.addEventListener('click',e=>{if(e.target===ov)ov.classList.remove('open');}));
+});
 </script>
 </body>
 </html>
