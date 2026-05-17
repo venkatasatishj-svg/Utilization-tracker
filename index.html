@@ -793,7 +793,7 @@ const PAG = {
 /* ── PARSER ── */
 const PARSER={
   parse(wb){
-    // Build dept map from individual sheets
+    // Build dept map from individual dept sheets (name → dept)
     const dm={};
     CFG.DEPTS.forEach(dept=>{
       if(!wb.Sheets[dept])return;
@@ -802,24 +802,47 @@ const PARSER={
           const n=String(row[0]||'').trim();
           if(n&&!isSerial(row[0])&&n!=='00AA'&&n.length>1)dm[n.toLowerCase()]=dept;
         });
-      }catch(e){console.warn('Dept map error for',dept,e);}
+      }catch(e){console.warn('dept map error',dept,e);}
     });
 
-    let resources=[],monthSet=new Set();
+    const monthSet=new Set();
+    let resources=[];
 
-    // Try ALL sheet first, then fall back to per-dept sheets
-    const sheetsToTry=wb.Sheets['ALL']?['ALL']:CFG.DEPTS;
-    sheetsToTry.forEach(sheetName=>{
-      if(!wb.Sheets[sheetName])return;
-      const forceDept=sheetName==='ALL'?null:sheetName;
-      try{
-        const parsed=this._sheet(wb.Sheets[sheetName],dm,monthSet,forceDept);
-        parsed.forEach(r=>{
-          if(!resources.find(x=>x.name.toLowerCase()===r.name.toLowerCase()))resources.push(r);
-        });
-      }catch(e){console.warn('Sheet error',sheetName,e);}
+    // Step 1: parse ALL sheet as the base resource list (if present)
+    if(wb.Sheets['ALL']){
+      try{ resources=this._sheet(wb.Sheets['ALL'],dm,monthSet); }
+      catch(e){ console.warn('ALL sheet error',e); }
+    }
+
+    // Step 2: ALWAYS also parse each dept sheet —
+    //   • adds resources not in ALL
+    //   • overlays exit date / remarks from dept sheet onto existing records
+    //     (user may update DNET without touching the ALL sheet)
+    CFG.DEPTS.forEach(dept=>{
+      if(!wb.Sheets[dept])return;
+      let deptRows=[];
+      try{ deptRows=this._sheet(wb.Sheets[dept],dm,monthSet,dept); }
+      catch(e){ console.warn('dept sheet error',dept,e); return; }
+
+      deptRows.forEach(inc=>{
+        const ex=resources.find(r=>r.name.toLowerCase()===inc.name.toLowerCase());
+        if(ex){
+          // overlay: if dept sheet has exit date or remarks, prefer that data
+          if(inc.exitDate)ex.exitDate=inc.exitDate;
+          if(inc.remarks)ex.remarks=inc.remarks;
+          if(inc.utiComments)ex.utiComments=inc.utiComments;
+          if(inc.replStatus)ex.replStatus=inc.replStatus;
+          // merge month data from dept sheet too
+          Object.keys(inc.months).forEach(m=>{
+            if(!ex.months[m])ex.months[m]=inc.months[m];
+          });
+        }else{
+          resources.push(inc);
+        }
+      });
     });
 
+    // If still empty (no ALL sheet and no dept sheets), bail
     let months=Array.from(monthSet).sort((a,b)=>m2d(a)-m2d(b));
     if(!months.length)months=CFG.MO.map(mo=>`${mo} ${new Date().getFullYear()}`);
     return{resources,months};
@@ -827,17 +850,17 @@ const PARSER={
 
   _sheet(sheet,dm,monthSet,forceDept){
     let rows=[];
-    try{rows=XLSX.utils.sheet_to_json(sheet,{header:1,defval:''});}
-    catch(e){console.warn('sheet_to_json error',e);return[];}
+    try{ rows=XLSX.utils.sheet_to_json(sheet,{header:1,defval:''}); }
+    catch(e){ console.warn('sheet_to_json error',e); return[]; }
     if(!rows.length)return[];
 
-    // Find header row — scan up to row 8 for one containing date serials
+    // Find header row that contains date serials (scan up to row 8)
     let hRow=0;
     for(let r=0;r<Math.min(8,rows.length);r++){
       if(rows[r]&&rows[r].some(v=>isSerial(v))){hRow=r;break;}
     }
 
-    // Detect month column groups from header row
+    // Detect month column groups from the header row
     const mCols=[];
     (rows[hRow]||[]).forEach((v,c)=>{
       if(isSerial(v)){
@@ -849,26 +872,29 @@ const PARSER={
       }
     });
 
-    // Find exit/remarks/comments columns from header labels (row above hRow or hRow itself)
+    // Column labels row is BELOW the month header row (hRow+1)
+    // This row contains text like "Exit Date", "Remarks", "Comments"
+    const labelRow=rows[hRow+1]||[];
     let exitCol=-1,remarksCol=-1,commentsCol=-1;
-    const labelRow=(hRow>0?rows[hRow-1]:null)||rows[hRow]||[];
     labelRow.forEach((h,i)=>{
       const hl=String(h||'').toLowerCase();
       if(exitCol===-1&&(hl.includes('exit')||hl.includes('last work')))exitCol=i;
       if(remarksCol===-1&&hl.includes('remark'))remarksCol=i;
       if(commentsCol===-1&&(hl.includes('comment')||hl.includes('util')))commentsCol=i;
     });
-    // Position-based fallback: columns after last month group
+
+    // Position-based fallback: columns immediately after the last month group
     const lastMC=mCols.length>0?mCols[mCols.length-1]:null;
     if(lastMC){
-      if(exitCol===-1)exitCol=lastMC.pc+1;
-      if(remarksCol===-1)remarksCol=lastMC.pc+2;
+      if(exitCol===-1)    exitCol    =lastMC.pc+1;
+      if(remarksCol===-1) remarksCol =lastMC.pc+2;
       if(commentsCol===-1)commentsCol=lastMC.pc+3;
     }
 
     const res=[];
     const uid=Date.now();
-    for(let r=hRow+1;r<rows.length;r++){
+    // Data rows start at hRow+2 (skip the month header row AND the column labels row)
+    for(let r=hRow+2;r<rows.length;r++){
       try{
         const row=rows[r];
         if(!row||row.length<2)continue;
@@ -880,7 +906,7 @@ const PARSER={
 
         const dept=forceDept||dm[name.toLowerCase()]||this._gDept(String(row[7]||''));
 
-        // Parse monthly utilization
+        // Monthly utilization
         const months={};
         mCols.forEach(mc=>{
           const bv=mc.bc<row.length?row[mc.bc]:'';
@@ -896,12 +922,11 @@ const PARSER={
           };
         });
 
-        // Exit date — try dedicated column first, then scan for any serial in trailing cols
+        // Exit date: check dedicated column first, then scan all trailing cols for any date serial
         let exitDate=null;
-        if(exitCol>0&&exitCol<row.length&&isSerial(row[exitCol])){
+        if(exitCol>=0&&exitCol<row.length&&isSerial(row[exitCol])){
           exitDate=exJsDate(row[exitCol]);
         }else if(lastMC){
-          // Scan trailing columns after last month group for a date serial
           for(let c=lastMC.pc+1;c<row.length;c++){
             if(isSerial(row[c])){exitDate=exJsDate(row[c]);break;}
           }
@@ -919,12 +944,12 @@ const PARSER={
           platform:String(row[7]||'').trim(),
           platform2:String(row[8]||'').trim(),
           exitDate,
-          remarks:String(remarksCol>0&&remarksCol<row.length?row[remarksCol]||'':'').trim(),
-          utiComments:String(commentsCol>0&&commentsCol<row.length?row[commentsCol]||'':'').trim(),
+          remarks:String(exitCol>=0&&remarksCol<row.length?row[remarksCol]||'':'').trim(),
+          utiComments:String(exitCol>=0&&commentsCol<row.length?row[commentsCol]||'':'').trim(),
           replStatus:'',missing:false,months
         });
       }catch(rowErr){
-        console.warn('Row parse error at index',r,rowErr);
+        console.warn('Row parse error at row',r,rowErr);
       }
     }
     return res;
@@ -955,8 +980,11 @@ const MERGER={
   },
   _merge(ex,inc){
     const c={any:false,util:false};
-    ['desig','platform','platform2','remarks','utiComments','replStatus'].forEach(f=>{if(inc[f]&&(inc[f]||'')!==(ex[f]||'')){ex[f]=inc[f];c.any=true;}});
-    if(inc.exitDate&&!ex.exitDate){ex.exitDate=inc.exitDate;c.any=true;}
+    ['desig','platform','platform2','remarks','utiComments','replStatus'].forEach(f=>{
+      if(inc[f]&&(inc[f]||'')!==(ex[f]||'')){ex[f]=inc[f];c.any=true;}
+    });
+    // Always update exit date if incoming has one (don't require existing to be null)
+    if(inc.exitDate){ex.exitDate=inc.exitDate;c.any=true;}
     if(inc.exp&&inc.exp!==ex.exp){ex.exp=inc.exp;c.any=true;}
     Object.entries(inc.months||{}).forEach(([m,d])=>{
       const e=ex.months[m];
