@@ -279,7 +279,6 @@ tbody td{padding:7px 11px;font-size:12px;color:var(--g700);vertical-align:middle
 @media(max-width:1100px){.charts-row{grid-template-columns:1fr 1fr}.charts-row .chart-card:last-child{grid-column:1/-1}.dept-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:768px){:root{--sw:0px}.sidebar{display:none}.charts-row{grid-template-columns:1fr}.fg{grid-template-columns:1fr}.stats-grid{grid-template-columns:repeat(2,1fr)}}
 </style>
-</head>
 <body>
 
 <div id="appShell">
@@ -608,7 +607,21 @@ const exMonthLbl=v=>{const d=exJsDate(v);return d?d.toLocaleDateString('en-US',{
 const isSerial=v=>typeof v==='number'&&v>40000&&v<55000;
 const fmtDate=d=>(d instanceof Date&&!isNaN(d))?d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}):'—';
 const m2d=lbl=>lbl?new Date('1 '+lbl):null;
-const activeMonth=()=>STATE.selectedMonth||STATE.months[STATE.months.length-1]||'';
+const activeMonth=()=>STATE.selectedMonth||closestMonth()||'';
+
+// Returns the month label closest to today that exists in STATE.months
+function closestMonth(){
+  if(!STATE.months.length)return '';
+  const now=new Date();
+  const curLabel=now.toLocaleDateString('en-US',{month:'short',year:'numeric'});
+  if(STATE.months.includes(curLabel))return curLabel;
+  // find closest by time distance
+  return STATE.months.reduce((best,m)=>{
+    const d=Math.abs(m2d(m)-now);
+    const bd=Math.abs(m2d(best)-now);
+    return d<bd?m:best;
+  });
+}
 
 function debouncedRender(fn) {
   clearTimeout(STATE.timers[fn]);
@@ -628,7 +641,7 @@ const bPct=(r,m)=>{const b=getBill(r,m);return(b===null||b==='NA')?null:Math.min
 const isResigned=r=>!!(r.exitDate instanceof Date&&!isNaN(r.exitDate));
 const resignMo=r=>r.exitDate?r.exitDate.toLocaleDateString('en-US',{month:'short',year:'numeric'}):null;
 const filtered=()=>STATE.resources.filter(r=>!STATE.dept||r.dept===STATE.dept);
-function activeRes(m){m=m||activeMonth();return filtered().filter(r=>{if(isResigned(r)&&r.exitDate<new Date())return false;return!m||r.months[m]!==undefined});}
+function activeRes(m){m=m||activeMonth();return filtered().filter(r=>{if(isResigned(r))return false;return!m||r.months[m]!==undefined;});}
 const rKey=r=>(r.name||'').toLowerCase().trim()+'|'+fmtDate(r.doj);
 
 /* ── UI ATOMS ── */
@@ -780,63 +793,150 @@ const PAG = {
 /* ── PARSER ── */
 const PARSER={
   parse(wb){
+    // Build dept map from individual sheets
     const dm={};
     CFG.DEPTS.forEach(dept=>{
       if(!wb.Sheets[dept])return;
-      XLSX.utils.sheet_to_json(wb.Sheets[dept],{header:1,defval:''}).slice(3).forEach(row=>{
-        const n=String(row[0]||'').trim();
-        if(n&&!isSerial(row[0])&&n!=='00AA'&&n.length>1)dm[n.toLowerCase()]=dept;
-      });
+      try{
+        XLSX.utils.sheet_to_json(wb.Sheets[dept],{header:1,defval:''}).forEach(row=>{
+          const n=String(row[0]||'').trim();
+          if(n&&!isSerial(row[0])&&n!=='00AA'&&n.length>1)dm[n.toLowerCase()]=dept;
+        });
+      }catch(e){console.warn('Dept map error for',dept,e);}
     });
+
     let resources=[],monthSet=new Set();
-    if(wb.Sheets['ALL']){resources=this._sheet(wb.Sheets['ALL'],dm,monthSet);}
-    if(!resources.length){
-      CFG.DEPTS.forEach(dept=>{
-        if(!wb.Sheets[dept])return;
-        this._sheet(wb.Sheets[dept],dm,monthSet,dept).forEach(r=>{
+
+    // Try ALL sheet first, then fall back to per-dept sheets
+    const sheetsToTry=wb.Sheets['ALL']?['ALL']:CFG.DEPTS;
+    sheetsToTry.forEach(sheetName=>{
+      if(!wb.Sheets[sheetName])return;
+      const forceDept=sheetName==='ALL'?null:sheetName;
+      try{
+        const parsed=this._sheet(wb.Sheets[sheetName],dm,monthSet,forceDept);
+        parsed.forEach(r=>{
           if(!resources.find(x=>x.name.toLowerCase()===r.name.toLowerCase()))resources.push(r);
         });
-      });
-    }
+      }catch(e){console.warn('Sheet error',sheetName,e);}
+    });
+
     let months=Array.from(monthSet).sort((a,b)=>m2d(a)-m2d(b));
-    if(!months.length)months=CFG.MO.map(m=>`${m} 2026`);
+    if(!months.length)months=CFG.MO.map(mo=>`${mo} ${new Date().getFullYear()}`);
     return{resources,months};
   },
+
   _sheet(sheet,dm,monthSet,forceDept){
-    const rows=XLSX.utils.sheet_to_json(sheet,{header:1,defval:''});
+    let rows=[];
+    try{rows=XLSX.utils.sheet_to_json(sheet,{header:1,defval:''});}
+    catch(e){console.warn('sheet_to_json error',e);return[];}
+    if(!rows.length)return[];
+
+    // Find header row — scan up to row 8 for one containing date serials
     let hRow=0;
-    for(let r=0;r<Math.min(6,rows.length);r++){if(rows[r].some(v=>isSerial(v))){hRow=r;break;}}
+    for(let r=0;r<Math.min(8,rows.length);r++){
+      if(rows[r]&&rows[r].some(v=>isSerial(v))){hRow=r;break;}
+    }
+
+    // Detect month column groups from header row
     const mCols=[];
-    rows[hRow].forEach((v,c)=>{
-      if(isSerial(v)){const lbl=exMonthLbl(v);if(lbl&&!mCols.find(m=>m.lbl===lbl)){mCols.push({lbl,bc:c,cc:c+1,pc:c+2});monthSet.add(lbl);}}
+    (rows[hRow]||[]).forEach((v,c)=>{
+      if(isSerial(v)){
+        const lbl=exMonthLbl(v);
+        if(lbl&&!mCols.find(m=>m.lbl===lbl)){
+          mCols.push({lbl,bc:c,cc:c+1,pc:c+2});
+          monthSet.add(lbl);
+        }
+      }
     });
+
+    // Find exit/remarks/comments columns from header labels (row above hRow or hRow itself)
+    let exitCol=-1,remarksCol=-1,commentsCol=-1;
+    const labelRow=(hRow>0?rows[hRow-1]:null)||rows[hRow]||[];
+    labelRow.forEach((h,i)=>{
+      const hl=String(h||'').toLowerCase();
+      if(exitCol===-1&&(hl.includes('exit')||hl.includes('last work')))exitCol=i;
+      if(remarksCol===-1&&hl.includes('remark'))remarksCol=i;
+      if(commentsCol===-1&&(hl.includes('comment')||hl.includes('util')))commentsCol=i;
+    });
+    // Position-based fallback: columns after last month group
+    const lastMC=mCols.length>0?mCols[mCols.length-1]:null;
+    if(lastMC){
+      if(exitCol===-1)exitCol=lastMC.pc+1;
+      if(remarksCol===-1)remarksCol=lastMC.pc+2;
+      if(commentsCol===-1)commentsCol=lastMC.pc+3;
+    }
+
     const res=[];
-    for(let r=hRow+2;r<rows.length;r++){
-      const row=rows[r],name=String(row[0]||'').trim();
-      if(!name||isSerial(row[0])||name==='00AA'||name.length<2)continue;
-      if(/resource\s*names?/i.test(name)||/^#/.test(name))continue;
-      const dept=forceDept||dm[name.toLowerCase()]||this._gDept(String(row[7]||''));
-      const months={};
-      mCols.forEach(mc=>{
-        const bv=row[mc.bc];
-        const billable=(bv===''||bv===null||bv===undefined)?null:(String(bv).toUpperCase()==='NA')?'NA':(isNaN(parseFloat(bv))?null:parseFloat(bv));
-        months[mc.lbl]={billable,client:String(row[mc.cc]||'').trim(),project:String(row[mc.pc]||'').trim()};
-      });
-      const exitVal=row[row.length-3];
-      res.push({id:Date.now()+res.length,name,dept,
-        doj:isSerial(row[1])?exJsDate(row[1]):null,
-        exp:parseFloat(row[2])||0,yop:row[3]||'',
-        osiYoe:parseFloat(row[4])||0,beforeOsi:parseFloat(row[5])||0,
-        desig:String(row[6]||'').trim(),platform:String(row[7]||'').trim(),
-        platform2:String(row[8]||'').trim(),
-        exitDate:isSerial(exitVal)?exJsDate(exitVal):null,
-        remarks:String(row[row.length-2]||'').trim(),
-        utiComments:String(row[row.length-1]||'').trim(),
-        replStatus:'',missing:false,months});
+    const uid=Date.now();
+    for(let r=hRow+1;r<rows.length;r++){
+      try{
+        const row=rows[r];
+        if(!row||row.length<2)continue;
+        const name=String(row[0]||'').trim();
+        if(!name||name.length<2)continue;
+        if(isSerial(row[0]))continue;
+        if(/^(resource\s*name|#|total|sub.?total|grand)/i.test(name))continue;
+        if(name==='00AA')continue;
+
+        const dept=forceDept||dm[name.toLowerCase()]||this._gDept(String(row[7]||''));
+
+        // Parse monthly utilization
+        const months={};
+        mCols.forEach(mc=>{
+          const bv=mc.bc<row.length?row[mc.bc]:'';
+          let billable=null;
+          if(bv!==''&&bv!==null&&bv!==undefined){
+            if(String(bv).toUpperCase()==='NA')billable='NA';
+            else{const n=parseFloat(bv);if(!isNaN(n))billable=n;}
+          }
+          months[mc.lbl]={
+            billable,
+            client:String(mc.cc<row.length?row[mc.cc]||'':'').trim(),
+            project:String(mc.pc<row.length?row[mc.pc]||'':'').trim()
+          };
+        });
+
+        // Exit date — try dedicated column first, then scan for any serial in trailing cols
+        let exitDate=null;
+        if(exitCol>0&&exitCol<row.length&&isSerial(row[exitCol])){
+          exitDate=exJsDate(row[exitCol]);
+        }else if(lastMC){
+          // Scan trailing columns after last month group for a date serial
+          for(let c=lastMC.pc+1;c<row.length;c++){
+            if(isSerial(row[c])){exitDate=exJsDate(row[c]);break;}
+          }
+        }
+
+        res.push({
+          id:uid+res.length,
+          name,dept,
+          doj:row.length>1&&isSerial(row[1])?exJsDate(row[1]):null,
+          exp:parseFloat(row[2])||0,
+          yop:row[3]||'',
+          osiYoe:parseFloat(row[4])||0,
+          beforeOsi:parseFloat(row[5])||0,
+          desig:String(row[6]||'').trim(),
+          platform:String(row[7]||'').trim(),
+          platform2:String(row[8]||'').trim(),
+          exitDate,
+          remarks:String(remarksCol>0&&remarksCol<row.length?row[remarksCol]||'':'').trim(),
+          utiComments:String(commentsCol>0&&commentsCol<row.length?row[commentsCol]||'':'').trim(),
+          replStatus:'',missing:false,months
+        });
+      }catch(rowErr){
+        console.warn('Row parse error at index',r,rowErr);
+      }
     }
     return res;
   },
-  _gDept(p){p=p.toLowerCase();if(p.includes('.net')||p.includes('sharepoint'))return'DNET';if(p.includes('android')||p.includes('ios')||p.includes('flutter')||p.includes('unity'))return'MOBL';if(p.includes('php')||p.includes('python'))return'PPR';return'JAVA';}
+
+  _gDept(p){
+    p=(p||'').toLowerCase();
+    if(p.includes('.net')||p.includes('sharepoint')||p.includes('c#'))return'DNET';
+    if(p.includes('android')||p.includes('ios')||p.includes('flutter')||p.includes('unity')||p.includes('react native'))return'MOBL';
+    if(p.includes('php')||p.includes('python')||p.includes('django'))return'PPR';
+    return'JAVA';
+  }
 };
 
 /* ── MERGER ── */
@@ -905,7 +1005,7 @@ const UPLOAD={
           STATE.resources=resources;STATE.months=months;
           summary={updated:resources.length,added:0,missing:0,utilChanges:0};
         }
-        STATE.selectedMonth=STATE.months[STATE.months.length-1]||'';
+        STATE.selectedMonth=closestMonth();
         $('sbFile').textContent=file.name;$('sbDate').textContent=new Date().toLocaleDateString();
         STORAGE.save();STORAGE.addHist(file.name,summary);
         refresh();renderHistSidebar();showSummary(summary,file.name);
@@ -1088,9 +1188,8 @@ function renderDashboard(){
 
 function renderAll(){
   const srch=($('srchAll').value||'').toLowerCase(),status=$('fStAll').value,m=activeMonth();
-  // persist filters
   STATE.filters.all={search:srch,status};
-  let data=filtered().filter(r=>{
+  let data=activeRes(m).filter(r=>{
     if(srch&&!r.name.toLowerCase().includes(srch)&&!String(r.months[m]?.client||'').toLowerCase().includes(srch)&&!r.platform.toLowerCase().includes(srch)&&!String(r.remarks||'').toLowerCase().includes(srch)&&!String(r.utiComments||'').toLowerCase().includes(srch))return false;
     if(status==='billable'&&!isBill(r,m))return false;
     if(status==='nb'&&!isNB(r,m))return false;
@@ -1114,7 +1213,7 @@ function renderAll(){
 function renderBillable(){
   const srch=($('srchBill').value||'').toLowerCase(),m=activeMonth();
   STATE.filters.bill={search:srch};
-  const data=filtered().filter(r=>isBill(r,m)&&(!srch||r.name.toLowerCase().includes(srch)||String(r.months[m]?.client||'').toLowerCase().includes(srch)));
+  const data=activeRes(m).filter(r=>isBill(r,m)&&(!srch||r.name.toLowerCase().includes(srch)||String(r.months[m]?.client||'').toLowerCase().includes(srch)));
   const sl=PAG.slice('bill',data);
   $('billBody').innerHTML=sl.rows.length?sl.rows.map(r=>{const md=r.months[m]||{};return`<tr>
     <td>${rl(r)}</td><td>${deptTag(r.dept)}</td><td>${r.platform||'—'}</td><td>${r.desig||'—'}</td>
@@ -1128,7 +1227,7 @@ function renderBillable(){
 function renderNbGt2(){
   const srch=($('srchNbGt2').value||'').toLowerCase(),m=activeMonth();
   STATE.filters.nbGt2={search:srch};
-  const data=filtered().filter(r=>isNB(r,m)&&r.exp>2&&(!srch||r.name.toLowerCase().includes(srch)||r.platform.toLowerCase().includes(srch)));
+  const data=activeRes(m).filter(r=>isNB(r,m)&&r.exp>2&&(!srch||r.name.toLowerCase().includes(srch)||r.platform.toLowerCase().includes(srch)));
   const sl=PAG.slice('nbGt2',data);
   $('nbGt2Body').innerHTML=sl.rows.length?sl.rows.map(r=>{const md=r.months[m]||{};return`<tr>
     <td>${rl(r)}</td><td>${deptTag(r.dept)}</td><td>${r.platform||'—'}</td><td>${r.desig||'—'}</td>
@@ -1142,7 +1241,7 @@ function renderNbGt2(){
 function renderNbLt2(){
   const srch=($('srchNbLt2').value||'').toLowerCase(),m=activeMonth();
   STATE.filters.nbLt2={search:srch};
-  const data=filtered().filter(r=>isNB(r,m)&&r.exp<=2&&(!srch||r.name.toLowerCase().includes(srch)||r.platform.toLowerCase().includes(srch)));
+  const data=activeRes(m).filter(r=>isNB(r,m)&&r.exp<=2&&(!srch||r.name.toLowerCase().includes(srch)||r.platform.toLowerCase().includes(srch)));
   const sl=PAG.slice('nbLt2',data);
   $('nbLt2Body').innerHTML=sl.rows.length?sl.rows.map(r=>{const md=r.months[m]||{};return`<tr>
     <td>${rl(r)}</td><td>${deptTag(r.dept)}</td><td>${r.platform||'—'}</td><td>${r.desig||'—'}</td>
@@ -1251,7 +1350,7 @@ const EXPORT={
   },
   filtered(type){
     const m=activeMonth();
-    const map={all:filtered,billable:()=>filtered().filter(r=>isBill(r,m)),nbGt2:()=>filtered().filter(r=>isNB(r,m)&&r.exp>2),nbLt2:()=>filtered().filter(r=>isNB(r,m)&&r.exp<=2),resignations:()=>STATE.resources.filter(r=>isResigned(r))};
+    const map={all:()=>activeRes(m),billable:()=>activeRes(m).filter(r=>isBill(r,m)),nbGt2:()=>activeRes(m).filter(r=>isNB(r,m)&&r.exp>2),nbLt2:()=>activeRes(m).filter(r=>isNB(r,m)&&r.exp<=2),resignations:()=>STATE.resources.filter(r=>isResigned(r))};
     const data=(map[type]||map.all)();
     const rows=this._rows(data,m);const ws=XLSX.utils.aoa_to_sheet(rows);this._style(ws,data.length);
     const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,type);
