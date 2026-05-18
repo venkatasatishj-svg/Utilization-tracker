@@ -300,6 +300,7 @@ tbody td{padding:7px 11px;font-size:12px;color:var(--g700);vertical-align:middle
       <div class="nav-item" data-view="nbLt2"><span class="ni">🔷</span>NB · Exp ≤ 2 yrs<span class="nbd p" id="bdgNbLt2">0</span></div>
       <div class="nav-sec">Workforce</div>
       <div class="nav-item" data-view="resignations"><span class="ni">🚪</span>Resignations<span class="nbd" id="bdgResign">0</span></div>
+      <div class="nav-item" data-view="planning"><span class="ni">📋</span>Utilization Planning<span class="nbd r" id="bdgPlan">0</span></div>
       <div class="nav-sec">Actions</div>
       <div class="nav-item" id="navUpload"><span class="ni">📂</span>Upload Excel</div>
       <div class="nav-item" id="navAddRes"><span class="ni">➕</span>Add Resource</div>
@@ -365,7 +366,7 @@ tbody td{padding:7px 11px;font-size:12px;color:var(--g700);vertical-align:middle
         <div class="t-tb"><h3>⚠️ Non-Billable Resources</h3><span class="badge br" id="nbDashCnt">0</span></div>
         <div class="t-wrap"><table><thead><tr>
           <th>Resource</th><th>Dept</th><th>Designation</th><th>Exp</th>
-          <th>Category</th><th>% Bill</th><th>Client</th><th>Comments</th><th></th>
+          <th>Category</th><th>% Bill</th><th>Client</th><th>Comments</th><th>Util. Plan</th><th></th>
         </tr></thead><tbody id="dashNBBody"></tbody></table></div>
       </div>
     </div>
@@ -384,7 +385,7 @@ tbody td{padding:7px 11px;font-size:12px;color:var(--g700);vertical-align:middle
         <div class="t-wrap"><table><thead><tr>
           <th>Resource</th><th>Dept</th><th>Platform</th><th>Designation</th>
           <th>Exp</th><th>% Bill</th><th>Client</th><th>Project</th>
-          <th>Remarks</th><th>Comments</th><th>Status</th>
+          <th>Remarks</th><th>Comments</th><th>Status</th><th>Util. Plan</th>
         </tr></thead><tbody id="allBody"></tbody></table></div>
         <div class="t-ft" id="ftAll"></div>
       </div>
@@ -416,11 +417,13 @@ tbody td{padding:7px 11px;font-size:12px;color:var(--g700);vertical-align:middle
         <div class="t-tb">
           <h3>NB · Exp &gt; 2 Years</h3>
           <input class="srch" id="srchNbGt2" placeholder="🔍 Search..." oninput="PAG.reset('nbGt2');debouncedRender('renderNbGt2')">
+          <select class="fsel" id="fNbGt2Plan" onchange="PAG.reset('nbGt2');renderNbGt2()"><option value="">All Plan Status</option><option value="no-plan">No Plan</option><option value="Critical">Critical</option><option value="In Progress">In Progress</option><option value="Planned">Planned</option><option value="On Hold">On Hold</option><option value="Completed">Completed</option></select>
+          <select class="fsel" id="fNbGt2Pri" onchange="PAG.reset('nbGt2');renderNbGt2()"><option value="">All Priority</option><option value="High">High</option><option value="Medium">Medium</option><option value="Low">Low</option></select>
           <button class="btn btn-s btn-sm" onclick="EXPORT.filtered('nbGt2')">⬇ Export</button>
         </div>
         <div class="t-wrap"><table><thead><tr>
           <th>Resource</th><th>Dept</th><th>Platform</th><th>Designation</th>
-          <th>Exp</th><th>OSI YOE</th><th>% Bill</th><th>Client</th><th>Comments</th>
+          <th>Exp</th><th>OSI YOE</th><th>% Bill</th><th>Client</th><th>Comments</th><th>Util. Plan</th>
         </tr></thead><tbody id="nbGt2Body"></tbody></table></div>
         <div class="t-ft" id="ftNbGt2"></div>
       </div>
@@ -436,11 +439,13 @@ tbody td{padding:7px 11px;font-size:12px;color:var(--g700);vertical-align:middle
         <div class="t-tb">
           <h3>NB · Exp ≤ 2 Years</h3>
           <input class="srch" id="srchNbLt2" placeholder="🔍 Search..." oninput="PAG.reset('nbLt2');debouncedRender('renderNbLt2')">
+          <select class="fsel" id="fNbLt2Plan" onchange="PAG.reset('nbLt2');renderNbLt2()"><option value="">All Plan Status</option><option value="no-plan">No Plan</option><option value="Critical">Critical</option><option value="In Progress">In Progress</option><option value="Planned">Planned</option><option value="On Hold">On Hold</option><option value="Completed">Completed</option></select>
+          <select class="fsel" id="fNbLt2Pri" onchange="PAG.reset('nbLt2');renderNbLt2()"><option value="">All Priority</option><option value="High">High</option><option value="Medium">Medium</option><option value="Low">Low</option></select>
           <button class="btn btn-s btn-sm" onclick="EXPORT.filtered('nbLt2')">⬇ Export</button>
         </div>
         <div class="t-wrap"><table><thead><tr>
           <th>Resource</th><th>Dept</th><th>Platform</th><th>Designation</th>
-          <th>Exp</th><th>OSI YOE</th><th>% Bill</th><th>Client</th><th>Comments</th>
+          <th>Exp</th><th>OSI YOE</th><th>% Bill</th><th>Client</th><th>Comments</th><th>Util. Plan</th>
         </tr></thead><tbody id="nbLt2Body"></tbody></table></div>
         <div class="t-ft" id="ftNbLt2"></div>
       </div>
@@ -471,6 +476,35 @@ tbody td{padding:7px 11px;font-size:12px;color:var(--g700);vertical-align:middle
           <th>Last Working Day</th><th>Remarks</th><th>Replacement Status</th><th></th>
         </tr></thead><tbody id="resignBody"></tbody></table></div>
         <div class="t-ft" id="ftResign"></div>
+      </div>
+    </div>
+
+    <!-- UTILIZATION PLANNING -->
+    <div class="view" id="view-planning">
+      <div class="stats-grid" id="planStats"></div>
+      <div class="table-card">
+        <div class="t-tb">
+          <h3>📋 Utilization Planning</h3>
+          <input class="srch" id="srchPlan" placeholder="🔍 Name, action, manager..." oninput="PAG.reset('planning');debouncedRender('renderPlanningView')">
+          <select class="fsel" id="fPlanStatus" onchange="PAG.reset('planning');renderPlanningView()">
+            <option value="">All Status</option><option value="no-plan">No Plan</option>
+            <option value="Critical">Critical</option><option value="In Progress">In Progress</option>
+            <option value="Planned">Planned</option><option value="On Hold">On Hold</option><option value="Completed">Completed</option>
+          </select>
+          <select class="fsel" id="fPlanPriority" onchange="PAG.reset('planning');renderPlanningView()">
+            <option value="">All Priority</option><option value="High">High</option><option value="Medium">Medium</option><option value="Low">Low</option>
+          </select>
+          <select class="fsel" id="fPlanDept" onchange="PAG.reset('planning');renderPlanningView()">
+            <option value="">All Depts</option><option value="DNET">DNET</option><option value="JAVA">JAVA</option><option value="PPR">PPR</option><option value="MOBL">MOBL</option>
+          </select>
+          <button class="btn btn-s btn-sm" onclick="EXPORT.filtered('planning')">⬇ Export</button>
+        </div>
+        <div class="t-wrap"><table><thead><tr>
+          <th>Resource</th><th>Dept</th><th>Exp</th><th>% Bill</th>
+          <th>Plan Status</th><th>Priority</th><th>Planned Action</th>
+          <th>Target Date</th><th>Manager</th><th>Follow-up</th><th></th>
+        </tr></thead><tbody id="planBody"></tbody></table></div>
+        <div class="t-ft" id="ftPlan"></div>
       </div>
     </div>
   </main>
@@ -537,6 +571,24 @@ tbody td{padding:7px 11px;font-size:12px;color:var(--g700);vertical-align:middle
         <div class="fi full"><label class="fl">Utilization Comments</label><textarea class="fta" id="fUtiCmt" placeholder="Client pipeline, bench activities..."></textarea></div>
         <div class="fi full"><label class="fl">Replacement Status</label><input type="text" class="inp" id="fReplSt" placeholder="Not started / In progress / Hired"></div>
       </div>
+      <div class="fsec">📋 Utilization Plan</div>
+      <div class="fg">
+        <div class="fi"><label class="fl">Plan Status</label>
+          <select class="inp fsel-m" id="fUpStatus">
+            <option value="">— No Plan</option><option value="Critical">🔴 Critical</option>
+            <option value="In Progress">🔵 In Progress</option><option value="Planned">🟡 Planned</option>
+            <option value="On Hold">⏸ On Hold</option><option value="Completed">✅ Completed</option>
+          </select></div>
+        <div class="fi"><label class="fl">Priority</label>
+          <select class="inp fsel-m" id="fUpPriority">
+            <option value="">—</option><option value="High">↑ High</option>
+            <option value="Medium">→ Medium</option><option value="Low">↓ Low</option>
+          </select></div>
+        <div class="fi"><label class="fl">Target Billing Date</label><input type="date" class="inp" id="fUpTarget"></div>
+        <div class="fi"><label class="fl">Follow-up Date</label><input type="date" class="inp" id="fUpFollowUp"></div>
+        <div class="fi"><label class="fl">Responsible Manager</label><input type="text" class="inp" id="fUpManager" placeholder="Manager name"></div>
+        <div class="fi full"><label class="fl">Planned Action</label><input type="text" class="inp" id="fUpAction" placeholder="e.g. Submit to TCS pipeline, Upskilling in React..."></div>
+      </div>
       <div class="fsec">Monthly Utilization</div>
       <div id="mthRows" style="border:1px solid var(--g100);border-radius:6px;padding:6px 10px;max-height:290px;overflow-y:auto">
         <div style="display:grid;grid-template-columns:105px 65px 1fr 1fr;gap:4px;padding:4px 0 6px;border-bottom:1px solid var(--g200)">
@@ -575,7 +627,10 @@ const CFG = {
   DLBL: {DNET:'.NET',JAVA:'Java',PPR:'PHP/Py',MOBL:'Mobile'},
   DCOL: {DNET:'#2563eb',JAVA:'#10b981',PPR:'#f59e0b',MOBL:'#8b5cf6'},
   MO: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
-  LS_D:'rut_data',LS_M:'rut_months',LS_H:'rut_hist',LS_P:'rut_prefs'
+  LS_D:'rut_data',LS_M:'rut_months',LS_H:'rut_hist',LS_P:'rut_prefs',
+  PLAN_STATUSES: ['','Critical','In Progress','Planned','On Hold','Completed'],
+  PRIORITIES: ['','High','Medium','Low'],
+  EP: {status:'',action:'',targetDate:null,manager:'',followUpDate:null,priority:''}
 };
 
 /* ── STATE ── */
@@ -587,14 +642,16 @@ const STATE = {
     bill:  {page:1, size:25},
     nbGt2: {page:1, size:25},
     nbLt2: {page:1, size:25},
-    resign:{page:1, size:25}
+    resign:{page:1, size:25},
+    planning:{page:1, size:25}
   },
   filters:{
     all:   {search:'', status:''},
     bill:  {search:''},
-    nbGt2: {search:''},
-    nbLt2: {search:''},
-    resign:{search:'', mo:'', yr:'', dept:''}
+    nbGt2: {search:'', planStatus:'', priority:''},
+    nbLt2: {search:'', planStatus:'', priority:''},
+    resign:{search:'', mo:'', yr:'', dept:''},
+    planning:{search:'', status:'', priority:''}
   }
 };
 
@@ -661,6 +718,41 @@ function billBar(pct){
 const rl=r=>`<span class="rl" onclick="MODAL.openEdit(${r.id})" title="Click to edit">${trunc(r.name,22)}<span class="rl-ic">✏</span></span>`;
 const rmkCell=t=>{if(!t)return'<span style="color:var(--g300)">—</span>';const s=t.replace(/</g,'&lt;').replace(/>/g,'&gt;');return`<div class="rmkt" onclick="this.classList.toggle('exp')" title="Click to expand">${s}</div>`};
 
+/* Plan atoms */
+const PLAN_CLS={Critical:'br','In Progress':'bb',Planned:'bam','On Hold':'bgr',Completed:'bg'};
+const PRI_CLS={High:'br',Medium:'bam',Low:'bg'};
+const PRI_IC={High:'↑',Medium:'→',Low:'↓'};
+function planBadge(r){
+  const s=r.uPlan?.status;
+  if(!s)return'<span class="badge bgr" style="opacity:.55;font-size:9px">No Plan</span>';
+  return`<span class="badge ${PLAN_CLS[s]||'bgr'}">${s}</span>`;
+}
+function priorityBadge(r){
+  const p=r.uPlan?.priority;
+  if(!p)return'';
+  return`<span class="badge ${PRI_CLS[p]||'bgr'}" style="font-size:9px;margin-left:2px">${PRI_IC[p]||''} ${p}</span>`;
+}
+function planCell(r){
+  return`<div style="display:flex;flex-direction:column;gap:3px">${planBadge(r)}${priorityBadge(r)}</div>`;
+}
+function inlineSel(id,field,options,cur,width='100%'){
+  return`<select class="fsel" style="font-size:11px;padding:3px 5px;width:${width}" onchange="updatePlan(${id},'${field}',this.value)">${options.map(o=>`<option value="${o}" ${o===cur?'selected':''}>${o||'—'}</option>`).join('')}</select>`;
+}
+function inlineInp(id,field,val,placeholder='',width='100%'){
+  return`<input type="text" class="inp" style="font-size:11px;padding:3px 6px;width:${width}" value="${String(val||'').replace(/"/g,'&quot;')}" placeholder="${placeholder}" onchange="updatePlan(${id},'${field}',this.value)">`;
+}
+function inlineDateInp(id,field,val){
+  const v=val instanceof Date&&!isNaN(val)?val.toISOString().split('T')[0]:'';
+  return`<input type="date" class="inp" style="font-size:11px;padding:3px 5px;width:130px" value="${v}" onchange="updatePlan(${id},'${field}',this.value)">`;
+}
+function updatePlan(id,field,val){
+  const r=STATE.resources.find(x=>x.id===id);if(!r)return;
+  if(!r.uPlan)r.uPlan={...CFG.EP};
+  if(field==='targetDate'||field==='followUpDate')r.uPlan[field]=val?new Date(val):null;
+  else r.uPlan[field]=val;
+  STORAGE.save();updateBadges();
+}
+
 function showToast(msg,type='',dur=3200){
   const el=document.createElement('div');el.className='toast'+(type?' '+type:'');el.textContent=msg;
   $('toast').appendChild(el);setTimeout(()=>el.style.opacity='0',dur-400);setTimeout(()=>el.remove(),dur);
@@ -672,28 +764,24 @@ const openModal=id=>$(id).classList.add('open');
 const STORAGE={
   save(){
     try{
-      const ser=STATE.resources.map(r=>({...r,doj:r.doj?r.doj.toISOString():null,exitDate:r.exitDate?r.exitDate.toISOString():null}));
+      const serUp=up=>up?{...up,targetDate:up.targetDate?up.targetDate.toISOString():null,followUpDate:up.followUpDate?up.followUpDate.toISOString():null}:{...CFG.EP};
+      const ser=STATE.resources.map(r=>({...r,doj:r.doj?r.doj.toISOString():null,exitDate:r.exitDate?r.exitDate.toISOString():null,uPlan:serUp(r.uPlan)}));
       localStorage.setItem(CFG.LS_D,JSON.stringify(ser));
       localStorage.setItem(CFG.LS_M,JSON.stringify(STATE.months));
-      // persist prefs: month, dept, page sizes, filters
       const pagSizes={};Object.keys(STATE.pag).forEach(k=>pagSizes[k]=STATE.pag[k].size);
-      localStorage.setItem(CFG.LS_P,JSON.stringify({
-        selectedMonth:STATE.selectedMonth, dept:STATE.dept,
-        pagSizes, filters:STATE.filters
-      }));
+      localStorage.setItem(CFG.LS_P,JSON.stringify({selectedMonth:STATE.selectedMonth,dept:STATE.dept,pagSizes,filters:STATE.filters}));
     }catch(e){}
   },
   load(){
     try{
       const raw=localStorage.getItem(CFG.LS_D),rawM=localStorage.getItem(CFG.LS_M);
       if(!raw||!rawM)return false;
-      STATE.resources=JSON.parse(raw).map(r=>({...r,doj:r.doj?new Date(r.doj):null,exitDate:r.exitDate?new Date(r.exitDate):null}));
+      const restUp=up=>up?{...CFG.EP,...up,targetDate:up.targetDate?new Date(up.targetDate):null,followUpDate:up.followUpDate?new Date(up.followUpDate):null}:{...CFG.EP};
+      STATE.resources=JSON.parse(raw).map(r=>({...r,doj:r.doj?new Date(r.doj):null,exitDate:r.exitDate?new Date(r.exitDate):null,uPlan:restUp(r.uPlan)}));
       STATE.months=JSON.parse(rawM);
       const p=JSON.parse(localStorage.getItem(CFG.LS_P)||'{}');
       STATE.selectedMonth=p.selectedMonth||''; STATE.dept=p.dept||'';
-      // restore page sizes
       if(p.pagSizes) Object.keys(p.pagSizes).forEach(k=>{ if(STATE.pag[k]) STATE.pag[k].size=p.pagSizes[k]; });
-      // restore filters
       if(p.filters) Object.keys(p.filters).forEach(k=>{ if(STATE.filters[k]) Object.assign(STATE.filters[k], p.filters[k]); });
       return STATE.resources.length>0;
     }catch(e){return false;}
@@ -946,7 +1034,7 @@ const PARSER={
           exitDate,
           remarks:String(exitCol>=0&&remarksCol<row.length?row[remarksCol]||'':'').trim(),
           utiComments:String(exitCol>=0&&commentsCol<row.length?row[commentsCol]||'':'').trim(),
-          replStatus:'',missing:false,months
+          replStatus:'',missing:false,uPlan:{...CFG.EP},months
         });
       }catch(rowErr){
         console.warn('Row parse error at row',r,rowErr);
@@ -974,7 +1062,7 @@ const MERGER={
     incoming.forEach(r=>{
       const key=rKey(r);
       if(exMap.has(key)){const ex=exMap.get(key);const c=this._merge(ex,r);if(c.util)s.utilChanges++;if(c.any){s.updated++;ex.missing=false;}}
-      else{existing.push({...r,id:Date.now()+Math.random()});s.added++;}
+      else{existing.push({...r,id:Date.now()+s.added,uPlan:{...CFG.EP}});s.added++;}
     });
     return s;
   },
@@ -986,6 +1074,13 @@ const MERGER={
     // Always update exit date if incoming has one (don't require existing to be null)
     if(inc.exitDate){ex.exitDate=inc.exitDate;c.any=true;}
     if(inc.exp&&inc.exp!==ex.exp){ex.exp=inc.exp;c.any=true;}
+    // Merge uPlan: only update non-empty incoming fields
+    if(inc.uPlan){
+      if(!ex.uPlan)ex.uPlan={...CFG.EP};
+      ['status','action','manager','priority'].forEach(f=>{if(inc.uPlan[f]&&inc.uPlan[f]!==ex.uPlan[f]){ex.uPlan[f]=inc.uPlan[f];c.any=true;}});
+      if(inc.uPlan.targetDate){ex.uPlan.targetDate=inc.uPlan.targetDate;c.any=true;}
+      if(inc.uPlan.followUpDate){ex.uPlan.followUpDate=inc.uPlan.followUpDate;c.any=true;}
+    }
     Object.entries(inc.months||{}).forEach(([m,d])=>{
       const e=ex.months[m];
       if(!e){ex.months[m]=d;c.any=c.util=true;return;}
@@ -1058,9 +1153,10 @@ function showSummary(s,fname){
 const MODAL={
   openAdd(){
     $('mdResTitle').textContent='Add Resource';$('fEditId').value='';
-    ['fName','fDesig','fPlat','fPlat2','fRemarks','fUtiCmt','fReplSt'].forEach(id=>$(id).value='');
+    ['fName','fDesig','fPlat','fPlat2','fRemarks','fUtiCmt','fReplSt','fUpAction','fUpManager'].forEach(id=>$(id).value='');
     ['fExp','fOsiYoe','fBeforeOsi'].forEach(id=>$(id).value='');
     $('fDoj').value='';$('fExit').value='';$('fDept').value='JAVA';
+    $('fUpStatus').value='';$('fUpPriority').value='';$('fUpTarget').value='';$('fUpFollowUp').value='';
     this._buildMthRows({});openModal('mdResource');
   },
   openEdit(id){
@@ -1072,6 +1168,11 @@ const MODAL={
     $('fExp').value=r.exp||'';$('fOsiYoe').value=r.osiYoe||'';$('fBeforeOsi').value=r.beforeOsi||'';
     $('fExit').value=r.exitDate?r.exitDate.toISOString().split('T')[0]:'';
     $('fRemarks').value=r.remarks||'';$('fUtiCmt').value=r.utiComments||'';$('fReplSt').value=r.replStatus||'';
+    const up=r.uPlan||{};
+    $('fUpStatus').value=up.status||'';$('fUpPriority').value=up.priority||'';
+    $('fUpAction').value=up.action||'';$('fUpManager').value=up.manager||'';
+    $('fUpTarget').value=up.targetDate?up.targetDate.toISOString().split('T')[0]:'';
+    $('fUpFollowUp').value=up.followUpDate?up.followUpDate.toISOString().split('T')[0]:'';
     this._buildMthRows(r.months||{});openModal('mdResource');
   },
   _buildMthRows(ex){
@@ -1100,12 +1201,17 @@ const MODAL={
     });
     const doj=$('fDoj').value?new Date($('fDoj').value):null;
     const exit=$('fExit').value?new Date($('fExit').value):null;
-    const eid=parseInt($('fEditId').value);
+    const eid=Number($('fEditId').value);
     if(eid){
       const r=STATE.resources.find(x=>x.id===eid);
-      if(r){Object.assign(r,{name,dept:$('fDept').value,platform:$('fPlat').value.trim(),platform2:$('fPlat2').value.trim(),desig:$('fDesig').value.trim(),doj,exp:parseFloat($('fExp').value)||0,osiYoe:parseFloat($('fOsiYoe').value)||0,beforeOsi:parseFloat($('fBeforeOsi').value)||0,exitDate:exit,remarks:$('fRemarks').value.trim(),utiComments:$('fUtiCmt').value.trim(),replStatus:$('fReplSt').value.trim()});Object.assign(r.months,months);showToast('✅ Resource updated','ok');}
+      if(r){
+        Object.assign(r,{name,dept:$('fDept').value,platform:$('fPlat').value.trim(),platform2:$('fPlat2').value.trim(),desig:$('fDesig').value.trim(),doj,exp:parseFloat($('fExp').value)||0,osiYoe:parseFloat($('fOsiYoe').value)||0,beforeOsi:parseFloat($('fBeforeOsi').value)||0,exitDate:exit,remarks:$('fRemarks').value.trim(),utiComments:$('fUtiCmt').value.trim(),replStatus:$('fReplSt').value.trim(),
+          uPlan:{status:$('fUpStatus').value,action:$('fUpAction').value.trim(),targetDate:$('fUpTarget').value?new Date($('fUpTarget').value):null,manager:$('fUpManager').value.trim(),followUpDate:$('fUpFollowUp').value?new Date($('fUpFollowUp').value):null,priority:$('fUpPriority').value}
+        });
+        Object.assign(r.months,months);showToast('✅ Resource updated','ok');
+      }else{showToast('⚠️ Resource not found — try again','err');}
     }else{
-      STATE.resources.push({id:Date.now(),name,dept:$('fDept').value,platform:$('fPlat').value.trim(),platform2:$('fPlat2').value.trim(),desig:$('fDesig').value.trim(),doj,exp:parseFloat($('fExp').value)||0,osiYoe:parseFloat($('fOsiYoe').value)||0,beforeOsi:parseFloat($('fBeforeOsi').value)||0,exitDate:exit,remarks:$('fRemarks').value.trim(),utiComments:$('fUtiCmt').value.trim(),replStatus:$('fReplSt').value.trim(),missing:false,months});
+      STATE.resources.push({id:Date.now(),name,dept:$('fDept').value,platform:$('fPlat').value.trim(),platform2:$('fPlat2').value.trim(),desig:$('fDesig').value.trim(),doj,exp:parseFloat($('fExp').value)||0,osiYoe:parseFloat($('fOsiYoe').value)||0,beforeOsi:parseFloat($('fBeforeOsi').value)||0,exitDate:exit,remarks:$('fRemarks').value.trim(),utiComments:$('fUtiCmt').value.trim(),replStatus:$('fReplSt').value.trim(),missing:false,uPlan:{...CFG.EP},months});
       showToast('✅ Resource added','ok');
     }
     closeModal('mdResource');STORAGE.save();refresh();
@@ -1167,6 +1273,11 @@ function renderDashboard(){
   const rYr=resigned.filter(r=>r.exitDate&&r.exitDate.getFullYear()===yr).length;
   const t=active.length;
   const hasData=STATE.resources.length>0;
+  const curMoLbl=new Date().toLocaleDateString('en-US',{month:'short',year:'numeric'});
+  const noPlan=nb.filter(r=>!r.uPlan?.status).length;
+  const criticalNB=nb.filter(r=>r.uPlan?.status==='Critical').length;
+  const planThisMo=nb.filter(r=>r.uPlan?.targetDate instanceof Date&&!isNaN(r.uPlan.targetDate)&&r.uPlan.targetDate.toLocaleDateString('en-US',{month:'short',year:'numeric'})===curMoLbl).length;
+  const expConvert=nb.filter(r=>r.uPlan?.status==='In Progress'||r.uPlan?.status==='Planned').length;
 
   $('statsGrid').innerHTML=[
     {cl:'bl',lb:'Total Resources',v:t,s:'Active this period'},
@@ -1175,7 +1286,11 @@ function renderDashboard(){
     {cl:'or',lb:'NB · Exp > 2 yrs',v:nbGt2.length,s:'Experienced bench'},
     {cl:'am',lb:'NB · Exp ≤ 2 yrs',v:nbLt2.length,s:'Junior bench'},
     {cl:'pu',lb:'Resignations This Month',v:rMo,s:'Current month exits'},
-    {cl:'te',lb:'Resignations This Year',v:rYr,s:`${yr} total exits`}
+    {cl:'te',lb:'Resignations This Year',v:rYr,s:`${yr} total exits`},
+    {cl:'re',lb:'NB Without Plan',v:noPlan,s:'Need utilization plan'},
+    {cl:'or',lb:'Critical NB',v:criticalNB,s:'Immediate action required'},
+    {cl:'am',lb:'Planned This Month',v:planThisMo,s:'Target billing date'},
+    {cl:'gr',lb:'Expected Conversions',v:expConvert,s:'In progress + planned'},
   ].map(s=>`<div class="stat-card ${s.cl}${!hasData?' skeleton':''}"><div class="sl">${s.lb}</div><div class="sv">${s.v}</div><div class="ss">${s.s}</div></div>`).join('');
 
   $('deptGrid').innerHTML=CFG.DEPTS.map(dept=>{
@@ -1209,9 +1324,10 @@ function renderDashboard(){
         <td>${r.exp>2?'<span class="badge br">Exp >2yr</span>':'<span class="badge bo">Exp ≤2yr</span>'}</td>
         <td>${billBar(bPct(r,m))}</td><td>${trunc(md.client||'—',18)}</td>
         <td>${rmkCell(r.utiComments)}</td>
+        <td>${planCell(r)}</td>
         <td><button class="btn btn-s btn-sm" onclick="MODAL.openEdit(${r.id})">✏</button></td>
       </tr>`;}).join('')
-    :`<tr><td colspan="9" style="text-align:center;padding:28px;color:var(--g400)">${hasData?'🎉 No non-billable resources for this period!':'Upload an Excel file to view non-billable resources.'}</td></tr>`;
+    :`<tr><td colspan="10" style="text-align:center;padding:28px;color:var(--g400)">${hasData?'🎉 No non-billable resources for this period!':'Upload an Excel file to view non-billable resources.'}</td></tr>`;
 }
 
 function renderAll(){
@@ -1233,8 +1349,9 @@ function renderAll(){
       <td>${trunc(md.client||'—',16)}</td><td>${trunc(md.project||'—',16)}</td>
       <td class="rmk">${rmkCell(r.remarks)}</td>
       <td class="rmk">${rmkCell(r.utiComments)}</td>
-      <td>${statusBadge(r,m)}</td></tr>`;
-  }).join(''):'<tr><td colspan="11" style="text-align:center;padding:32px;color:var(--g400)">No matching resources found</td></tr>';
+      <td>${statusBadge(r,m)}</td>
+      <td>${isNB(r,m)?planCell(r):'—'}</td></tr>`;
+  }).join(''):'<tr><td colspan="12" style="text-align:center;padding:32px;color:var(--g400)">No matching resources found</td></tr>';
   PAG.render('ftAll','all',sl);
 }
 
@@ -1254,29 +1371,47 @@ function renderBillable(){
 
 function renderNbGt2(){
   const srch=($('srchNbGt2').value||'').toLowerCase(),m=activeMonth();
-  STATE.filters.nbGt2={search:srch};
-  const data=activeRes(m).filter(r=>isNB(r,m)&&r.exp>2&&(!srch||r.name.toLowerCase().includes(srch)||r.platform.toLowerCase().includes(srch)));
+  const fPlan=$('fNbGt2Plan').value,fPri=$('fNbGt2Pri').value;
+  STATE.filters.nbGt2={search:srch,planStatus:fPlan,priority:fPri};
+  const data=activeRes(m).filter(r=>{
+    if(!isNB(r,m)||r.exp<=2)return false;
+    if(srch&&!r.name.toLowerCase().includes(srch)&&!r.platform.toLowerCase().includes(srch))return false;
+    if(fPlan==='no-plan'){if(r.uPlan?.status)return false;}
+    else if(fPlan&&r.uPlan?.status!==fPlan)return false;
+    if(fPri&&r.uPlan?.priority!==fPri)return false;
+    return true;
+  });
   const sl=PAG.slice('nbGt2',data);
   $('nbGt2Body').innerHTML=sl.rows.length?sl.rows.map(r=>{const md=r.months[m]||{};return`<tr>
     <td>${rl(r)}</td><td>${deptTag(r.dept)}</td><td>${r.platform||'—'}</td><td>${r.desig||'—'}</td>
     <td><strong>${r.exp.toFixed(1)}</strong></td><td>${r.osiYoe.toFixed(1)}</td>
     <td>${billBar(bPct(r,m))}</td><td>${trunc(md.client||'—',16)}</td>
-    <td class="rmk">${rmkCell(r.utiComments)}</td></tr>`;}).join('')
-    :'<tr><td colspan="9" style="text-align:center;padding:32px;color:var(--g400)">✅ No non-billable resources with experience > 2 years</td></tr>';
+    <td class="rmk">${rmkCell(r.utiComments)}</td>
+    <td>${planCell(r)}</td></tr>`;}).join('')
+    :'<tr><td colspan="10" style="text-align:center;padding:32px;color:var(--g400)">✅ No non-billable resources with experience > 2 years</td></tr>';
   PAG.render('ftNbGt2','nbGt2',sl);
 }
 
 function renderNbLt2(){
   const srch=($('srchNbLt2').value||'').toLowerCase(),m=activeMonth();
-  STATE.filters.nbLt2={search:srch};
-  const data=activeRes(m).filter(r=>isNB(r,m)&&r.exp<=2&&(!srch||r.name.toLowerCase().includes(srch)||r.platform.toLowerCase().includes(srch)));
+  const fPlan=$('fNbLt2Plan').value,fPri=$('fNbLt2Pri').value;
+  STATE.filters.nbLt2={search:srch,planStatus:fPlan,priority:fPri};
+  const data=activeRes(m).filter(r=>{
+    if(!isNB(r,m)||r.exp>2)return false;
+    if(srch&&!r.name.toLowerCase().includes(srch)&&!r.platform.toLowerCase().includes(srch))return false;
+    if(fPlan==='no-plan'){if(r.uPlan?.status)return false;}
+    else if(fPlan&&r.uPlan?.status!==fPlan)return false;
+    if(fPri&&r.uPlan?.priority!==fPri)return false;
+    return true;
+  });
   const sl=PAG.slice('nbLt2',data);
   $('nbLt2Body').innerHTML=sl.rows.length?sl.rows.map(r=>{const md=r.months[m]||{};return`<tr>
     <td>${rl(r)}</td><td>${deptTag(r.dept)}</td><td>${r.platform||'—'}</td><td>${r.desig||'—'}</td>
     <td><strong>${r.exp.toFixed(1)}</strong></td><td>${r.osiYoe.toFixed(1)}</td>
     <td>${billBar(bPct(r,m))}</td><td>${trunc(md.client||'—',16)}</td>
-    <td class="rmk">${rmkCell(r.utiComments)}</td></tr>`;}).join('')
-    :'<tr><td colspan="9" style="text-align:center;padding:32px;color:var(--g400)">✅ No non-billable resources with experience ≤ 2 years</td></tr>';
+    <td class="rmk">${rmkCell(r.utiComments)}</td>
+    <td>${planCell(r)}</td></tr>`;}).join('')
+    :'<tr><td colspan="10" style="text-align:center;padding:32px;color:var(--g400)">✅ No non-billable resources with experience ≤ 2 years</td></tr>';
   PAG.render('ftNbLt2','nbLt2',sl);
 }
 
@@ -1324,19 +1459,73 @@ function updateRepl(id,val){const r=STATE.resources.find(x=>x.id===id);if(r){r.r
 
 function toggleDept(d){STATE.dept=STATE.dept===d?'':d;$('deptSel').value=STATE.dept;STORAGE.save();refresh();}
 
+function renderPlanningView(){
+  const srch=($('srchPlan').value||'').toLowerCase();
+  const fStatus=$('fPlanStatus').value,fPri=$('fPlanPriority').value,fDept=$('fPlanDept').value;
+  STATE.filters.planning={search:srch,status:fStatus,priority:fPri};
+  const m=activeMonth();
+  const allNB=activeRes(m).filter(r=>isNB(r,m));
+  const now=new Date();
+  const curMoLbl=now.toLocaleDateString('en-US',{month:'short',year:'numeric'});
+
+  // Stats
+  const noPlan=allNB.filter(r=>!r.uPlan?.status).length;
+  const critical=allNB.filter(r=>r.uPlan?.status==='Critical').length;
+  const planMo=allNB.filter(r=>r.uPlan?.targetDate instanceof Date&&!isNaN(r.uPlan.targetDate)&&r.uPlan.targetDate.toLocaleDateString('en-US',{month:'short',year:'numeric'})===curMoLbl).length;
+  const expConvert=allNB.filter(r=>r.uPlan?.status==='In Progress'||r.uPlan?.status==='Planned').length;
+  $('planStats').innerHTML=[
+    {cl:'re',lb:'No Utilization Plan',v:noPlan,s:'Need immediate attention'},
+    {cl:'or',lb:'Critical NB Resources',v:critical,s:'Prioritize for placement'},
+    {cl:'am',lb:'Target Date This Month',v:planMo,s:'Billing planned '+curMoLbl},
+    {cl:'gr',lb:'Expected Conversions',v:expConvert,s:'In progress + planned'},
+  ].map(s=>`<div class="stat-card ${s.cl}"><div class="sl">${s.lb}</div><div class="sv">${s.v}</div><div class="ss">${s.s}</div></div>`).join('');
+
+  let data=allNB.filter(r=>{
+    if(fDept&&r.dept!==fDept)return false;
+    if(srch&&!r.name.toLowerCase().includes(srch)&&!String(r.uPlan?.action||'').toLowerCase().includes(srch)&&!String(r.uPlan?.manager||'').toLowerCase().includes(srch))return false;
+    if(fStatus==='no-plan'){if(r.uPlan?.status)return false;}
+    else if(fStatus&&r.uPlan?.status!==fStatus)return false;
+    if(fPri&&r.uPlan?.priority!==fPri)return false;
+    return true;
+  });
+  const sl=PAG.slice('planning',data);
+  $('planBody').innerHTML=sl.rows.length?sl.rows.map(r=>{
+    const p=r.uPlan||{};
+    return`<tr>
+      <td>${rl(r)}</td><td>${deptTag(r.dept)}</td>
+      <td>${r.exp.toFixed(1)}</td><td>${billBar(bPct(r,m))}</td>
+      <td>${inlineSel(r.id,'status',['','Critical','In Progress','Planned','On Hold','Completed'],p.status||'')}</td>
+      <td>${inlineSel(r.id,'priority',['','High','Medium','Low'],p.priority||'','90px')}</td>
+      <td>${inlineInp(r.id,'action',p.action,'Planned action…','140px')}</td>
+      <td>${inlineDateInp(r.id,'targetDate',p.targetDate)}</td>
+      <td>${inlineInp(r.id,'manager',p.manager,'Manager…','100px')}</td>
+      <td>${inlineDateInp(r.id,'followUpDate',p.followUpDate)}</td>
+      <td><button class="btn btn-s btn-sm" onclick="MODAL.openEdit(${r.id})">✏</button></td>
+    </tr>`;
+  }).join(''):'<tr><td colspan="11" style="text-align:center;padding:32px;color:var(--g400)">No non-billable resources match the selected filters</td></tr>';
+  PAG.render('ftPlan','planning',sl);
+}
+
 /* ── EXPORT ── */
 const EXPORT={
   _rows(list,m){
     const hdr=['Resource','Dept','DOJ','Exp','OSI YOE','Before OSI','Designation','Platform','Sec.Platform'];
     STATE.months.forEach(mo=>hdr.push(`${mo} %Bill`,`${mo} Client`,`${mo} Project`));
-    hdr.push('Exit Date','Remarks','Utilization Comments','Replacement Status','Status');
+    hdr.push('Exit Date','Remarks','Utilization Comments','Replacement Status','Status',
+      'Plan Status','Priority','Planned Action','Target Billing Date','Manager','Follow-up Date');
     return[hdr,...list.map(r=>{
       const row=[r.name,r.dept,r.doj?fmtDate(r.doj):'',r.exp,r.osiYoe,r.beforeOsi,r.desig,r.platform,r.platform2||''];
       STATE.months.forEach(mo=>{const d=r.months[mo]||{};row.push(d.billable!==null&&d.billable!==undefined?d.billable:'',d.client||'',d.project||'');});
+      const up=r.uPlan||{};
       row.push(r.exitDate?fmtDate(r.exitDate):'',r.remarks||'',r.utiComments||'',r.replStatus||'',
-        isResigned(r)?'Resigned':isBill(r,m)?'Billable':isNB(r,m)?'Non-Billable':'No Data');
+        isResigned(r)?'Resigned':isBill(r,m)?'Billable':isNB(r,m)?'Non-Billable':'No Data',
+        up.status||'',up.priority||'',up.action||'',up.targetDate?fmtDate(up.targetDate):'',up.manager||'',up.followUpDate?fmtDate(up.followUpDate):'');
       return row;
     })];
+  },
+  _planRows(list,m){
+    const hdr=['Resource','Dept','Platform','Exp','% Billable','Plan Status','Priority','Planned Action','Target Billing Date','Manager','Follow-up Date'];
+    return[hdr,...list.map(r=>{const up=r.uPlan||{};return[r.name,r.dept,r.platform||'',r.exp,bPct(r,m)!==null?bPct(r,m).toFixed(1)+'%':'—',up.status||'',up.priority||'',up.action||'',up.targetDate?fmtDate(up.targetDate):'',up.manager||'',up.followUpDate?fmtDate(up.followUpDate):''];})];
   },
   _style(ws,n){
     const r=XLSX.utils.decode_range(ws['!ref']||'A1');
@@ -1373,22 +1562,34 @@ const EXPORT={
       {n:'Resignations',d:STATE.resources.filter(r=>isResigned(r))},
       ...CFG.DEPTS.map(d=>({n:d,d:STATE.resources.filter(r=>r.dept===d)}))
     ].forEach(({n,d})=>{const rows=this._rows(d,m);const ws=XLSX.utils.aoa_to_sheet(rows);this._style(ws,d.length);XLSX.utils.book_append_sheet(wb,ws,n);});
+    // Utilization Planning sheet
+    const planNB=activeRes(m).filter(r=>isNB(r,m));
+    const wsPlan=XLSX.utils.aoa_to_sheet(this._planRows(planNB,m));
+    this._style(wsPlan,planNB.length);XLSX.utils.book_append_sheet(wb,wsPlan,'Util. Planning');
     XLSX.writeFile(wb,`Utilization_${new Date().toISOString().slice(0,10)}.xlsx`);
     showToast('✅ Excel exported','ok');
   },
   filtered(type){
     const m=activeMonth();
-    const map={all:()=>activeRes(m),billable:()=>activeRes(m).filter(r=>isBill(r,m)),nbGt2:()=>activeRes(m).filter(r=>isNB(r,m)&&r.exp>2),nbLt2:()=>activeRes(m).filter(r=>isNB(r,m)&&r.exp<=2),resignations:()=>STATE.resources.filter(r=>isResigned(r))};
+    const map={
+      all:()=>activeRes(m),billable:()=>activeRes(m).filter(r=>isBill(r,m)),
+      nbGt2:()=>activeRes(m).filter(r=>isNB(r,m)&&r.exp>2),nbLt2:()=>activeRes(m).filter(r=>isNB(r,m)&&r.exp<=2),
+      resignations:()=>STATE.resources.filter(r=>isResigned(r)),
+      planning:()=>activeRes(m).filter(r=>isNB(r,m))
+    };
     const data=(map[type]||map.all)();
-    const rows=this._rows(data,m);const ws=XLSX.utils.aoa_to_sheet(rows);this._style(ws,data.length);
-    const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,type);
+    const wb=XLSX.utils.book_new();
+    let rows,ws;
+    if(type==='planning'){rows=this._planRows(data,m);}else{rows=this._rows(data,m);}
+    ws=XLSX.utils.aoa_to_sheet(rows);this._style(ws,data.length);
+    XLSX.utils.book_append_sheet(wb,ws,type);
     XLSX.writeFile(wb,`${type}_${new Date().toISOString().slice(0,10)}.xlsx`);
     showToast(`✅ ${data.length} records exported`,'ok');
   }
 };
 
 /* ── NAV & REFRESH ── */
-const VIEW_TITLES={dashboard:'Dashboard',allResources:'All Resources',billable:'Billable Resources',nbGt2:'Non-Billable · Exp > 2 Years',nbLt2:'Non-Billable · Exp ≤ 2 Years',resignations:'Resignations'};
+const VIEW_TITLES={dashboard:'Dashboard',allResources:'All Resources',billable:'Billable Resources',nbGt2:'Non-Billable · Exp > 2 Years',nbLt2:'Non-Billable · Exp ≤ 2 Years',resignations:'Resignations',planning:'📋 Utilization Planning'};
 
 function showView(name){
   $$('.view').forEach(v=>v.classList.remove('active'));
@@ -1396,8 +1597,7 @@ function showView(name){
   $('view-'+name).classList.add('active');
   document.querySelector(`.nav-item[data-view="${name}"]`)?.classList.add('active');
   $('hTitle').textContent=VIEW_TITLES[name]||name;
-  // reset page to 1 when switching views (keep size)
-  const keyMap={allResources:'all',billable:'bill',nbGt2:'nbGt2',nbLt2:'nbLt2',resignations:'resign'};
+  const keyMap={allResources:'all',billable:'bill',nbGt2:'nbGt2',nbLt2:'nbLt2',resignations:'resign',planning:'planning'};
   const k=keyMap[name];if(k)STATE.pag[k].page=1;
   renderView(name);
 }
@@ -1409,6 +1609,7 @@ function renderView(name){
   else if(name==='nbGt2')renderNbGt2();
   else if(name==='nbLt2')renderNbLt2();
   else if(name==='resignations')renderResignations();
+  else if(name==='planning')renderPlanningView();
 }
 
 function refresh(){
@@ -1440,6 +1641,8 @@ function updateBadges(){
   $('bdgNbGt2').textContent=nb.filter(r=>r.exp>2).length;
   $('bdgNbLt2').textContent=nb.filter(r=>r.exp<=2).length;
   $('bdgResign').textContent=STATE.resources.filter(r=>isResigned(r)).length;
+  const noPlan=nb.filter(r=>!r.uPlan?.status).length;
+  $('bdgPlan').textContent=noPlan;
 }
 
 function renderHistSidebar(){
@@ -1459,8 +1662,8 @@ document.addEventListener('DOMContentLoaded',()=>{
   PAG.reg('nbGt2', renderNbGt2);
   PAG.reg('nbLt2', renderNbLt2);
   PAG.reg('resign',renderResignations);
+  PAG.reg('planning',renderPlanningView);
 
-  // Restore persisted filter/search values to DOM inputs
   const f=STATE.filters;
   if($('srchAll'))   $('srchAll').value   = f.all.search   || '';
   if($('fStAll'))    $('fStAll').value    = f.all.status   || '';
@@ -1468,6 +1671,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   if($('srchNbGt2')) $('srchNbGt2').value = f.nbGt2.search || '';
   if($('srchNbLt2')) $('srchNbLt2').value = f.nbLt2.search || '';
   if($('srchResign'))$('srchResign').value= f.resign.search|| '';
+  if($('srchPlan'))  $('srchPlan').value  = f.planning.search || '';
 
   refresh();renderHistSidebar();
 
