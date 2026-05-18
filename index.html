@@ -72,6 +72,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--g50);color:var(--g800);fo
 .btn-p{background:var(--bm);color:#fff}.btn-p:hover{background:var(--blue);box-shadow:0 3px 10px rgba(37,99,235,.35)}
 .btn-s{background:var(--g100);color:var(--g700);border:1px solid var(--g200)}.btn-s:hover{background:var(--g200)}
 .btn-ok{background:var(--green);color:#fff}.btn-ok:hover{background:#059669}
+.btn-danger{background:var(--red);color:#fff;border:none}.btn-danger:hover{background:#dc2626;box-shadow:0 3px 10px rgba(239,68,68,.35)}
+.btn-warn{background:var(--orange-light,#ffedd5);color:#7c2d12;border:1px solid var(--org)}.btn-warn:hover{background:#fed7aa}
 .btn-sm{padding:4px 10px;font-size:11px}
 
 /* Upload onboard banner */
@@ -597,6 +599,7 @@ tbody td{padding:7px 11px;font-size:12px;color:var(--g700);vertical-align:middle
       </div>
     </div>
     <div class="m-ft">
+      <button class="btn btn-danger" id="btnDeleteRes" style="display:none;margin-right:auto" onclick="MODAL.confirmDelete()">🗑 Delete</button>
       <button class="btn btn-s" onclick="closeModal('mdResource')">Cancel</button>
       <button class="btn btn-p" onclick="MODAL.save()">💾 Save</button>
     </div>
@@ -1157,6 +1160,7 @@ const MODAL={
     ['fExp','fOsiYoe','fBeforeOsi'].forEach(id=>$(id).value='');
     $('fDoj').value='';$('fExit').value='';$('fDept').value='JAVA';
     $('fUpStatus').value='';$('fUpPriority').value='';$('fUpTarget').value='';$('fUpFollowUp').value='';
+    const db=$('btnDeleteRes');db.style.display='none';db.textContent='🗑 Delete';db.className='btn btn-danger';
     this._buildMthRows({});openModal('mdResource');
   },
   openEdit(id){
@@ -1173,7 +1177,33 @@ const MODAL={
     $('fUpAction').value=up.action||'';$('fUpManager').value=up.manager||'';
     $('fUpTarget').value=up.targetDate?up.targetDate.toISOString().split('T')[0]:'';
     $('fUpFollowUp').value=up.followUpDate?up.followUpDate.toISOString().split('T')[0]:'';
+    // Show delete button, reset to initial state
+    const db=$('btnDeleteRes');db.style.display='';db.textContent='🗑 Delete';db.className='btn btn-danger';db._confirmed=false;
     this._buildMthRows(r.months||{});openModal('mdResource');
+  },
+  confirmDelete(){
+    const db=$('btnDeleteRes');
+    if(!db._confirmed){
+      // First click: ask for confirmation inline
+      db._confirmed=true;
+      db.textContent='⚠️ Click again to confirm';
+      db.className='btn btn-warn';
+      // Auto-reset after 4s if user doesn't confirm
+      clearTimeout(db._resetTimer);
+      db._resetTimer=setTimeout(()=>{db.textContent='🗑 Delete';db.className='btn btn-danger';db._confirmed=false;},4000);
+      return;
+    }
+    // Second click: delete
+    clearTimeout(db._resetTimer);
+    const eid=Number($('fEditId').value);
+    const idx=STATE.resources.findIndex(x=>x.id===eid);
+    if(idx===-1){showToast('⚠️ Resource not found','err');return;}
+    const name=STATE.resources[idx].name;
+    STATE.resources.splice(idx,1);
+    closeModal('mdResource');
+    STORAGE.save();
+    refresh();
+    showToast(`🗑 "${name}" deleted`,'ok');
   },
   _buildMthRows(ex){
     const cont=$('mthRows'),hdr=cont.firstElementChild;
