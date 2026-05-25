@@ -6,6 +6,7 @@
 <title>Resource Utilization Tracker | OSI Digital</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -313,7 +314,11 @@ tbody td{padding:7px 11px;font-size:12px;color:var(--g700);vertical-align:middle
       <div class="sb-hist-t">Recent Uploads</div>
       <div id="histList"></div>
     </div>
-    <div class="sb-foot"><div id="sbFile">No file loaded</div><div id="sbDate"></div></div>
+    <div class="sb-foot">
+      <div id="sbFile">No file loaded</div>
+      <div id="sbDate"></div>
+      <div id="syncStatus" style="font-size:10px;margin-top:3px;letter-spacing:.3px">🟡 Connecting…</div>
+    </div>
   </aside>
 
   <!-- HEADER -->
@@ -753,7 +758,7 @@ function updatePlan(id,field,val){
   if(!r.uPlan)r.uPlan={...CFG.EP};
   if(field==='targetDate'||field==='followUpDate')r.uPlan[field]=val?new Date(val):null;
   else r.uPlan[field]=val;
-  STORAGE.save();updateBadges();
+  STORAGE.saveResource(r);updateBadges();
 }
 
 function showToast(msg,type='',dur=3200){
@@ -763,36 +768,207 @@ function showToast(msg,type='',dur=3200){
 const closeModal=id=>$(id).classList.remove('open');
 const openModal=id=>$(id).classList.add('open');
 
-/* ── STORAGE ── */
+/* ── SUPABASE CONFIG ── */
+const SB_URL='https://ljwtnmjqpdwwxajebbzv.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxqd3RubWpxcGR3d3hhamViYnp2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzNTUxMjUsImV4cCI6MjA5NDkzMTEyNX0.zAGyEZNFFdcZwInQyZvTOQf_JL3ufMORKDoqM2iXRIU';
+
+/* ── STORAGE (Supabase-backed, localStorage for prefs/fallback) ── */
 const STORAGE={
-  save(){
+  _sb:null, _ch:null, _rt:false,
+
+  async init(){
     try{
-      const serUp=up=>up?{...up,targetDate:up.targetDate?up.targetDate.toISOString():null,followUpDate:up.followUpDate?up.followUpDate.toISOString():null}:{...CFG.EP};
-      const ser=STATE.resources.map(r=>({...r,doj:r.doj?r.doj.toISOString():null,exitDate:r.exitDate?r.exitDate.toISOString():null,uPlan:serUp(r.uPlan)}));
-      localStorage.setItem(CFG.LS_D,JSON.stringify(ser));
-      localStorage.setItem(CFG.LS_M,JSON.stringify(STATE.months));
+      const{createClient}=window.supabase;
+      // safeFetch: converts Headers object → plain object so postMessage structured-clone
+      // doesn't throw in sandboxed iframe environments (e.g. Claude artifact preview).
+      // Has no effect in normal browser / GitHub Pages context.
+      const safeFetch=(url,opts={})=>{
+        if(opts?.headers instanceof Headers){
+          const plain={};
+          opts.headers.forEach((v,k)=>{plain[k]=v;});
+          opts={...opts,headers:plain};
+        }
+        return fetch(url,opts);
+      };
+      this._sb=createClient(SB_URL,SB_KEY,{global:{fetch:safeFetch}});
+      this._setSync('connecting');
+    }catch(e){console.error('Supabase init error',e);this._setSync('error');}
+  },
+
+  async load(){
+    try{
+      this._loadPrefs();
+      const[{data:rows,error:e1},{data:mRow,error:e2}]=await Promise.all([
+        this._sb.from('resources').select('*').order('id'),
+        this._sb.from('app_months').select('*').eq('id',1).maybeSingle()
+      ]);
+      if(e1){console.error('[Supabase] resources error:',e1.message,e1.details,e1.hint,'code:',e1.code);throw e1;}
+      if(e2){console.error('[Supabase] app_months error:',e2.message,e2.details,e2.hint,'code:',e2.code);throw e2;}
+      STATE.resources=(rows||[]).map(r=>this._fromDB(r));
+      STATE.months=mRow?.months||[];
+      this._subscribeRealtime();
+      this._setSync('synced');
+      return STATE.resources.length>0;
+    }catch(err){
+      const msg=err?.message||err?.details||JSON.stringify(err)||'Unknown error';
+      console.error('[Supabase] load failed:',msg,'\nFull error:',JSON.stringify(err,null,2));
+      // Show actionable hint based on error type
+      if(msg.includes('does not exist')||msg.includes('42P01')){
+        showToast('❌ Tables not found — run the SQL setup in Supabase dashboard','err');
+      }else if(msg.includes('permission')||msg.includes('JWT')||msg.includes('RLS')||msg.includes('policy')){
+        showToast('❌ Permission denied — disable Row Level Security on both tables','err');
+      }else if(msg.includes('Invalid API key')||msg.includes('apikey')){
+        showToast('❌ Invalid API key — check your Supabase anon key','err');
+      }else{
+        showToast('⚠️ Cloud error: '+msg.slice(0,60),'err');
+      }
+      this._setSync('error');
+      return this._loadLocal();
+    }
+  },
+
+  async save(){
+    try{
+      this._setSync('saving');
+      const rows=STATE.resources.map(r=>this._toDB(r));
+      // Upsert in batches of 200
+      for(let i=0;i<rows.length;i+=200){
+        const{error}=await this._sb.from('resources').upsert(rows.slice(i,i+200),{onConflict:'id'});
+        if(error)throw error;
+      }
+      const{error:me}=await this._sb.from('app_months').upsert({id:1,months:STATE.months,updated_at:new Date().toISOString()},{onConflict:'id'});
+      if(me)throw me;
+      this._setSync('synced');
+    }catch(err){
+      const msg=err?.message||err?.details||JSON.stringify(err)||'Unknown';
+      console.error('[Supabase] save failed:',msg,JSON.stringify(err,null,2));
+      this._setSync('error');
+      showToast('⚠️ Sync error: '+msg.slice(0,60),'warn');
+      this._saveLocal();
+    }
+    this.savePrefs();
+  },
+
+  async saveResource(r){
+    try{
+      const{error}=await this._sb.from('resources').upsert(this._toDB(r),{onConflict:'id'});
+      if(error)throw error;
+      this._setSync('synced');
+    }catch(err){
+      const msg=err?.message||err?.details||JSON.stringify(err)||'Unknown';
+      console.error('[Supabase] saveResource failed:',msg);
+      this._setSync('error');
+    }
+    this.savePrefs();
+  },
+
+  async deleteResource(id){
+    try{
+      const{error}=await this._sb.from('resources').delete().eq('id',id);
+      if(error)throw error;
+    }catch(err){console.error('deleteResource error:',err);}
+  },
+
+  savePrefs(){
+    try{
       const pagSizes={};Object.keys(STATE.pag).forEach(k=>pagSizes[k]=STATE.pag[k].size);
       localStorage.setItem(CFG.LS_P,JSON.stringify({selectedMonth:STATE.selectedMonth,dept:STATE.dept,pagSizes,filters:STATE.filters}));
     }catch(e){}
   },
-  load(){
-    try{
-      const raw=localStorage.getItem(CFG.LS_D),rawM=localStorage.getItem(CFG.LS_M);
-      if(!raw||!rawM)return false;
-      const restUp=up=>up?{...CFG.EP,...up,targetDate:up.targetDate?new Date(up.targetDate):null,followUpDate:up.followUpDate?new Date(up.followUpDate):null}:{...CFG.EP};
-      STATE.resources=JSON.parse(raw).map(r=>({...r,doj:r.doj?new Date(r.doj):null,exitDate:r.exitDate?new Date(r.exitDate):null,uPlan:restUp(r.uPlan)}));
-      STATE.months=JSON.parse(rawM);
-      const p=JSON.parse(localStorage.getItem(CFG.LS_P)||'{}');
-      STATE.selectedMonth=p.selectedMonth||''; STATE.dept=p.dept||'';
-      if(p.pagSizes) Object.keys(p.pagSizes).forEach(k=>{ if(STATE.pag[k]) STATE.pag[k].size=p.pagSizes[k]; });
-      if(p.filters) Object.keys(p.filters).forEach(k=>{ if(STATE.filters[k]) Object.assign(STATE.filters[k], p.filters[k]); });
-      return STATE.resources.length>0;
-    }catch(e){return false;}
-  },
+
   addHist(name,changes){
     try{const h=JSON.parse(localStorage.getItem(CFG.LS_H)||'[]');h.unshift({name,date:new Date().toISOString(),changes});h.splice(8);localStorage.setItem(CFG.LS_H,JSON.stringify(h));}catch(e){}
   },
-  getHist(){try{return JSON.parse(localStorage.getItem(CFG.LS_H)||'[]');}catch(e){return[];}}
+
+  getHist(){try{return JSON.parse(localStorage.getItem(CFG.LS_H)||'[]');}catch(e){return[];}},
+
+  // ── DB ↔ STATE mapping ──
+  _toDB(r){
+    const up=r.uPlan||{};
+    return{
+      id:r.id,name:r.name,dept:r.dept,
+      doj:r.doj?r.doj.toISOString():null,
+      exp:r.exp||0,yop:String(r.yop||''),
+      osiyoe:r.osiYoe||0,beforeosi:r.beforeOsi||0,
+      desig:r.desig||'',platform:r.platform||'',platform2:r.platform2||'',
+      exitdate:r.exitDate?r.exitDate.toISOString():null,
+      remarks:r.remarks||'',uticomments:r.utiComments||'',
+      replstatus:r.replStatus||'',missing:r.missing||false,
+      uplan:{...up,targetDate:up.targetDate instanceof Date?up.targetDate.toISOString():null,followUpDate:up.followUpDate instanceof Date?up.followUpDate.toISOString():null},
+      months:r.months||{},
+      updated_at:new Date().toISOString()
+    };
+  },
+  _fromDB(r){
+    const up=r.uplan||{};
+    return{
+      id:Number(r.id),name:r.name||'',dept:r.dept||'JAVA',
+      doj:r.doj?new Date(r.doj):null,
+      exp:Number(r.exp)||0,yop:r.yop||'',
+      osiYoe:Number(r.osiyoe)||0,beforeOsi:Number(r.beforeosi)||0,
+      desig:r.desig||'',platform:r.platform||'',platform2:r.platform2||'',
+      exitDate:r.exitdate?new Date(r.exitdate):null,
+      remarks:r.remarks||'',utiComments:r.uticomments||'',
+      replStatus:r.replstatus||'',missing:r.missing||false,
+      uPlan:{...CFG.EP,...up,targetDate:up.targetDate?new Date(up.targetDate):null,followUpDate:up.followUpDate?new Date(up.followUpDate):null},
+      months:r.months||{}
+    };
+  },
+
+  // ── Real-time ──
+  _subscribeRealtime(){
+    if(this._ch)this._sb.removeChannel(this._ch);
+    this._ch=this._sb.channel('rut-changes')
+      .on('postgres_changes',{event:'*',schema:'public',table:'resources'},p=>this._onChange(p))
+      .on('postgres_changes',{event:'*',schema:'public',table:'app_months'},p=>{
+        if(p.new?.months){STATE.months=p.new.months;updateSelectors();}
+      })
+      .subscribe(s=>{
+        if(s==='SUBSCRIBED'){this._rt=true;this._setSync('synced');}
+        if(s==='CHANNEL_ERROR'||s==='TIMED_OUT'){this._rt=false;this._setSync('error');}
+      });
+  },
+  _onChange(payload){
+    const{eventType:ev,new:nr,old:or}=payload;
+    if(ev==='INSERT'){const r=this._fromDB(nr);if(!STATE.resources.find(x=>x.id===r.id))STATE.resources.push(r);}
+    else if(ev==='UPDATE'){const idx=STATE.resources.findIndex(x=>x.id===Number(nr.id));const r=this._fromDB(nr);idx!==-1?STATE.resources[idx]=r:STATE.resources.push(r);}
+    else if(ev==='DELETE'){const idx=STATE.resources.findIndex(x=>x.id===Number(or.id));if(idx!==-1)STATE.resources.splice(idx,1);}
+    refresh();
+  },
+
+  _setSync(s){
+    const el=$('syncStatus');if(!el)return;
+    const map={connecting:'🟡 Connecting…',saving:'🟡 Syncing…',synced:'🟢 Cloud synced',error:'🔴 Sync error — local only'};
+    el.textContent=map[s]||'';
+  },
+
+  // ── localStorage helpers ──
+  _loadPrefs(){
+    try{
+      const p=JSON.parse(localStorage.getItem(CFG.LS_P)||'{}');
+      STATE.selectedMonth=p.selectedMonth||'';STATE.dept=p.dept||'';
+      if(p.pagSizes)Object.keys(p.pagSizes).forEach(k=>{if(STATE.pag[k])STATE.pag[k].size=p.pagSizes[k];});
+      if(p.filters)Object.keys(p.filters).forEach(k=>{if(STATE.filters[k])Object.assign(STATE.filters[k],p.filters[k]);});
+    }catch(e){}
+  },
+  _saveLocal(){
+    try{
+      const serUp=up=>up?{...up,targetDate:up.targetDate?.toISOString()||null,followUpDate:up.followUpDate?.toISOString()||null}:{...CFG.EP};
+      const ser=STATE.resources.map(r=>({...r,doj:r.doj?.toISOString()||null,exitDate:r.exitDate?.toISOString()||null,uPlan:serUp(r.uPlan)}));
+      localStorage.setItem(CFG.LS_D,JSON.stringify(ser));
+      localStorage.setItem(CFG.LS_M,JSON.stringify(STATE.months));
+    }catch(e){}
+  },
+  _loadLocal(){
+    try{
+      const raw=localStorage.getItem(CFG.LS_D),rawM=localStorage.getItem(CFG.LS_M);
+      if(!raw||!rawM)return false;
+      const ru=up=>up?{...CFG.EP,...up,targetDate:up.targetDate?new Date(up.targetDate):null,followUpDate:up.followUpDate?new Date(up.followUpDate):null}:{...CFG.EP};
+      STATE.resources=JSON.parse(raw).map(r=>({...r,doj:r.doj?new Date(r.doj):null,exitDate:r.exitDate?new Date(r.exitDate):null,uPlan:ru(r.uPlan)}));
+      STATE.months=JSON.parse(rawM);
+      return STATE.resources.length>0;
+    }catch(e){return false;}
+  }
 };
 
 /* ── PAGINATION ENGINE ── */
@@ -811,15 +987,14 @@ const PAG = {
   // Navigate to page p for key, persist, re-render
   goto(key, p) {
     STATE.pag[key].page = p;
-    STORAGE.save();
+    STORAGE.savePrefs();
     PAG._rerender(key);
   },
 
-  // Change rows-per-page for key, reset to page 1, persist, re-render
   setSize(key, val) {
     STATE.pag[key].size = parseInt(val);
     STATE.pag[key].page = 1;
-    STORAGE.save();
+    STORAGE.savePrefs();
     PAG._rerender(key);
   },
 
@@ -1117,7 +1292,7 @@ const UPLOAD={
     closeModal('mdUpload');
     showToast('⏳ Parsing file…');
     const reader=new FileReader();
-    reader.onload=e=>{
+    reader.onload=async e=>{
       try{
         const wb=XLSX.read(e.target.result,{type:'array'});
         const{resources,months}=PARSER.parse(wb);
@@ -1133,7 +1308,9 @@ const UPLOAD={
         }
         STATE.selectedMonth=closestMonth();
         $('sbFile').textContent=file.name;$('sbDate').textContent=new Date().toLocaleDateString();
-        STORAGE.save();STORAGE.addHist(file.name,summary);
+        showToast('⏳ Saving to cloud…');
+        await STORAGE.save();
+        STORAGE.addHist(file.name,summary);
         refresh();renderHistSidebar();showSummary(summary,file.name);
       }catch(err){showToast('❌ Error: '+err.message,'err');console.error(err);}
     };
@@ -1201,7 +1378,7 @@ const MODAL={
     const name=STATE.resources[idx].name;
     STATE.resources.splice(idx,1);
     closeModal('mdResource');
-    STORAGE.save();
+    STORAGE.deleteResource(eid); // async fire-and-forget; real-time confirms on other clients
     refresh();
     showToast(`🗑 "${name}" deleted`,'ok');
   },
@@ -1244,7 +1421,10 @@ const MODAL={
       STATE.resources.push({id:Date.now(),name,dept:$('fDept').value,platform:$('fPlat').value.trim(),platform2:$('fPlat2').value.trim(),desig:$('fDesig').value.trim(),doj,exp:parseFloat($('fExp').value)||0,osiYoe:parseFloat($('fOsiYoe').value)||0,beforeOsi:parseFloat($('fBeforeOsi').value)||0,exitDate:exit,remarks:$('fRemarks').value.trim(),utiComments:$('fUtiCmt').value.trim(),replStatus:$('fReplSt').value.trim(),missing:false,uPlan:{...CFG.EP},months});
       showToast('✅ Resource added','ok');
     }
-    closeModal('mdResource');STORAGE.save();refresh();
+    closeModal('mdResource');
+    if(eid){STORAGE.saveResource(STATE.resources.find(x=>x.id===eid));}
+    else{STORAGE.saveResource(STATE.resources[STATE.resources.length-1]);}
+    refresh();
   },
   openMonth(){
     STATE.newMonth=null;
@@ -1257,13 +1437,13 @@ const MODAL={
     $$('#mchipCont .mchip:not(.ex)').forEach(c=>c.classList.remove('sel'));
     $('mchipCont').querySelector(`[data-m="${m}"]`).classList.add('sel');
   },
-  confirmMonth(){
+  async confirmMonth(){
     const m=STATE.newMonth;if(!m){showToast('⚠️ Select a month','warn');return;}
     if(!STATE.months.includes(m)){
       STATE.months.push(m);STATE.months.sort((a,b)=>m2d(a)-m2d(b));
       STATE.resources.forEach(r=>{if(!r.months[m])r.months[m]={billable:null,client:'',project:''};});
       STATE.selectedMonth=m;$('monthSel').value=m;
-      STORAGE.save();
+      await STORAGE.save();
     }
     closeModal('mdMonth');refresh();showToast(`📅 ${m} added`,'ok');
   }
@@ -1324,7 +1504,8 @@ function renderDashboard(){
   ].map(s=>`<div class="stat-card ${s.cl}${!hasData?' skeleton':''}"><div class="sl">${s.lb}</div><div class="sv">${s.v}</div><div class="ss">${s.s}</div></div>`).join('');
 
   $('deptGrid').innerHTML=CFG.DEPTS.map(dept=>{
-    const dr=STATE.resources.filter(r=>r.dept===dept&&(!m||r.months[m]!==undefined));
+    // Exclude resigned resources — same logic as KPI cards and all other views
+    const dr=STATE.resources.filter(r=>r.dept===dept&&!isResigned(r)&&(!m||r.months[m]!==undefined));
     const b=dr.filter(r=>isBill(r,m)).length;
     const pct=dr.length?Math.round(b/dr.length*100):0;
     return`<div class="dept-card ${STATE.dept===dept?'active':''}" onclick="toggleDept('${dept}')">
@@ -1337,7 +1518,7 @@ function renderDashboard(){
   if(hasData){
     CHARTS.donut('cBill',['Billable','Non-Billable'],[bill.length,nb.length],['#10b981','#ef4444']);
     CHARTS.donut('cNB',['Exp > 2 yrs','Exp ≤ 2 yrs'],[nbGt2.length,nbLt2.length],['#ef4444','#f97316']);
-    const dPcts=CFG.DEPTS.map(dept=>{const dr=STATE.resources.filter(r=>r.dept===dept&&(!m||r.months[m]!==undefined));return dr.length?Math.round(dr.filter(r=>isBill(r,m)).length/dr.length*100):0;});
+    const dPcts=CFG.DEPTS.map(dept=>{const dr=STATE.resources.filter(r=>r.dept===dept&&!isResigned(r)&&(!m||r.months[m]!==undefined));return dr.length?Math.round(dr.filter(r=>isBill(r,m)).length/dr.length*100):0;});
     CHARTS.bar('cDept',CFG.DEPTS,dPcts,Object.values(CFG.DCOL));
   }else{
     ['cBillWrap','cNBWrap','cDeptWrap'].forEach(wid=>{
@@ -1485,9 +1666,9 @@ function renderResignations(){
   PAG.render('ftResign','resign',sl);
 }
 
-function updateRepl(id,val){const r=STATE.resources.find(x=>x.id===id);if(r){r.replStatus=val;STORAGE.save();}}
+function updateRepl(id,val){const r=STATE.resources.find(x=>x.id===id);if(r){r.replStatus=val;STORAGE.saveResource(r);}}
 
-function toggleDept(d){STATE.dept=STATE.dept===d?'':d;$('deptSel').value=STATE.dept;STORAGE.save();refresh();}
+function toggleDept(d){STATE.dept=STATE.dept===d?'':d;$('deptSel').value=STATE.dept;STORAGE.savePrefs();refresh();}
 
 function renderPlanningView(){
   const srch=($('srchPlan').value||'').toLowerCase();
@@ -1649,7 +1830,7 @@ function refresh(){
   if(banner)banner.style.display=hasData?'none':'';
   const name=document.querySelector('.view.active')?.id.replace('view-','')||'dashboard';
   renderView(name);
-  STORAGE.save();
+  STORAGE.savePrefs();
 }
 
 function updateSelectors(){
@@ -1682,9 +1863,11 @@ function renderHistSidebar(){
 }
 
 /* ── INIT ── */
-document.addEventListener('DOMContentLoaded',()=>{
-  const restored=STORAGE.load();
-  if(restored){$('sbFile').textContent='Restored from cache';$('sbDate').textContent=new Date().toLocaleDateString();}
+document.addEventListener('DOMContentLoaded',async()=>{
+  await STORAGE.init();
+  showToast('⏳ Loading from cloud…');
+  const restored=await STORAGE.load();
+  if(restored){$('sbFile').textContent='Cloud data loaded';$('sbDate').textContent=new Date().toLocaleDateString();}
 
   // Register PAG render functions (enables PAG.goto/setSize to call correct fn)
   PAG.reg('all',   renderAll);
