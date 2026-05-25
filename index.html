@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Resource Utilization Tracker | OSI Digital</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -1719,85 +1720,114 @@ function renderPlanningView(){
 
 /* ── EXPORT ── */
 const EXPORT={
+  C:{
+    hdrBg:'FF0F2044',hdrFg:'FFFFFFFF',hdrBdr:'FF2563EB',
+    billBg:'FFD1FAE5',billFg:'FF065F46',
+    nbBg:'FFFEE2E2',nbFg:'FF991B1B',
+    resBg:'FFFFEDD5',resFg:'FF7C2D12',
+    totBg:'FFDBEAFE',totFg:'FF0F2044',
+    sumHBg:'FF2563EB',sumHFg:'FFFFFFFF',
+  },
   _rows(list,m){
     const hdr=['Resource','Dept','DOJ','Exp','OSI YOE','Before OSI','Designation','Platform','Sec.Platform'];
     STATE.months.forEach(mo=>hdr.push(`${mo} %Bill`,`${mo} Client`,`${mo} Project`));
-    hdr.push('Exit Date','Remarks','Utilization Comments','Replacement Status','Status',
-      'Plan Status','Priority','Planned Action','Target Billing Date','Manager','Follow-up Date');
+    hdr.push('Exit Date','Remarks','Utilization Comments','Replacement Status','Status','Plan Status','Priority','Planned Action','Target Billing Date','Manager','Follow-up Date');
     return[hdr,...list.map(r=>{
-      const row=[r.name,r.dept,r.doj?fmtDate(r.doj):'',r.exp,r.osiYoe,r.beforeOsi,r.desig,r.platform,r.platform2||''];
+      const row=[r.name,r.dept,r.doj?fmtDate(r.doj):'',parseFloat(r.exp.toFixed(2)),parseFloat(r.osiYoe.toFixed(2)),parseFloat(r.beforeOsi.toFixed(2)),r.desig,r.platform,r.platform2||''];
       STATE.months.forEach(mo=>{const d=r.months[mo]||{};row.push(d.billable!==null&&d.billable!==undefined?d.billable:'',d.client||'',d.project||'');});
       const up=r.uPlan||{};
-      row.push(r.exitDate?fmtDate(r.exitDate):'',r.remarks||'',r.utiComments||'',r.replStatus||'',
-        isResigned(r)?'Resigned':isBill(r,m)?'Billable':isNB(r,m)?'Non-Billable':'No Data',
-        up.status||'',up.priority||'',up.action||'',up.targetDate?fmtDate(up.targetDate):'',up.manager||'',up.followUpDate?fmtDate(up.followUpDate):'');
+      row.push(r.exitDate?fmtDate(r.exitDate):'',r.remarks||'',r.utiComments||'',r.replStatus||'',isResigned(r)?'Resigned':isBill(r,m)?'Billable':isNB(r,m)?'Non-Billable':'No Data',up.status||'',up.priority||'',up.action||'',up.targetDate?fmtDate(up.targetDate):'',up.manager||'',up.followUpDate?fmtDate(up.followUpDate):'');
       return row;
     })];
   },
   _planRows(list,m){
     const hdr=['Resource','Dept','Platform','Exp','% Billable','Plan Status','Priority','Planned Action','Target Billing Date','Manager','Follow-up Date'];
-    return[hdr,...list.map(r=>{const up=r.uPlan||{};return[r.name,r.dept,r.platform||'',r.exp,bPct(r,m)!==null?bPct(r,m).toFixed(1)+'%':'—',up.status||'',up.priority||'',up.action||'',up.targetDate?fmtDate(up.targetDate):'',up.manager||'',up.followUpDate?fmtDate(up.followUpDate):''];})];
+    return[hdr,...list.map(r=>{const up=r.uPlan||{};return[r.name,r.dept,r.platform||'',parseFloat(r.exp.toFixed(2)),bPct(r,m)!==null?bPct(r,m).toFixed(1)+'%':'—',up.status||'',up.priority||'',up.action||'',up.targetDate?fmtDate(up.targetDate):'',up.manager||'',up.followUpDate?fmtDate(up.followUpDate):''];})];
   },
-  _style(ws,n){
-    const r=XLSX.utils.decode_range(ws['!ref']||'A1');
-    const HS={font:{bold:true,color:{rgb:'FFFFFF'},sz:10},fill:{fgColor:{rgb:'0F2044'}},alignment:{horizontal:'center'}};
-    for(let c=r.s.c;c<=r.e.c;c++){const cell=ws[XLSX.utils.encode_cell({r:0,c})];if(cell)cell.s=HS;}
-    const sc=r.e.c;
-    for(let row=1;row<=n;row++){
-      const cell=ws[XLSX.utils.encode_cell({r:row,c:sc})];if(!cell)continue;
-      const s=cell.v==='Billable'?{fill:{fgColor:{rgb:'D1FAE5'}},font:{color:{rgb:'065F46'}}}:cell.v==='Non-Billable'?{fill:{fgColor:{rgb:'FEE2E2'}},font:{color:{rgb:'991B1B'}}}:cell.v==='Resigned'?{fill:{fgColor:{rgb:'FFEDD5'}},font:{color:{rgb:'7C2D12'}}}:null;
-      if(s){for(let c=r.s.c;c<=r.e.c;c++){const cl=ws[XLSX.utils.encode_cell({r:row,c})];if(cl)cl.s=s;}}
+  _applySheet(ws,rows){
+    if(!rows.length)return;
+    ws.addRows(rows);
+    const C=this.C,numCols=rows[0].length;
+    // Style header cells individually — only cells with content get colour
+    const hr=ws.getRow(1);
+    hr.height=22;
+    for(let c=1;c<=numCols;c++){
+      const cell=hr.getCell(c);
+      const val=cell.value;
+      if(val!==null&&val!==undefined&&val!==''){
+        cell.font={bold:true,color:{argb:C.hdrFg},size:10,name:'Calibri'};
+        cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:C.hdrBg}};
+        cell.alignment={horizontal:'center',vertical:'middle',wrapText:true};
+        cell.border={bottom:{style:'medium',color:{argb:C.hdrBdr}}};
+      }
     }
-    ws['!cols']=[];for(let c=r.s.c;c<=r.e.c;c++){let mx=8;for(let row=0;row<=n;row++){const v=String(ws[XLSX.utils.encode_cell({r:row,c})]?.v||'');mx=Math.max(mx,Math.min(v.length+2,32));}ws['!cols'].push({wch:mx});}
-    ws['!freeze']={xSplit:0,ySplit:1};ws['!autofilter']={ref:ws['!ref']};
+    const ROW_C={'Billable':{bg:C.billBg,fg:C.billFg},'Non-Billable':{bg:C.nbBg,fg:C.nbFg},'Resigned':{bg:C.resBg,fg:C.resFg}};
+    for(let i=2;i<=rows.length;i++){
+      const row=ws.getRow(i);
+      const rc=ROW_C[String(row.getCell(numCols).value||'')];
+      if(rc){row.eachCell({includeEmpty:true},cell=>{cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:rc.bg}};cell.font={color:{argb:rc.fg},size:9};});}
+    }
+    ws.columns=rows[0].map((h,i)=>{let mx=String(h).length;rows.forEach(r=>{const v=String(r[i]||'');if(v.length>mx)mx=v.length;});return{width:Math.min(Math.max(mx+2,10),38)};});
+    ws.views=[{state:'frozen',ySplit:1,xSplit:0}];
+    ws.autoFilter={from:{row:1,column:1},to:{row:1,column:numCols}};
   },
-  all(){
+  _applySum(ws,ts,m){
+    const C=this.C;
+    ws.mergeCells('A1:H1');
+    const tc=ws.getCell('A1');tc.value='OSI Digital — Resource Utilization Report';
+    tc.font={bold:true,size:14,color:{argb:'FF0F2044'},name:'Calibri'};tc.alignment={horizontal:'left',vertical:'middle'};ws.getRow(1).height=28;
+    ws.mergeCells('A2:H2');
+    const sc=ws.getCell('A2');sc.value=`Exported: ${ts}   |   Month: ${m||'All Months'}`;
+    sc.font={size:9,color:{argb:'FF64748B'},italic:true};
+    ws.addRow([]);ws.addRow([]);
+    const hr=ws.addRow(['Department','Total','Billable','Non-Billable','NB Exp>2yrs','NB Exp≤2yrs','Util %','Resignations']);
+    hr.height=20;
+    hr.eachCell(cell=>{
+      if(cell.value!==null&&cell.value!==undefined&&cell.value!==''){
+        cell.font={bold:true,color:{argb:C.sumHFg},size:10};
+        cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:C.sumHBg}};
+        cell.alignment={horizontal:'center',vertical:'middle'};
+      }
+    });
+    CFG.DEPTS.forEach(dept=>{
+      const dr=STATE.resources.filter(r=>r.dept===dept&&!isResigned(r)&&(!m||r.months[m]!==undefined));
+      const b=dr.filter(r=>isBill(r,m)).length,nb=dr.filter(r=>isNB(r,m));
+      const row=ws.addRow([CFG.DLBL[dept]+' ('+dept+')',dr.length,b,nb.length,nb.filter(r=>r.exp>2).length,nb.filter(r=>r.exp<=2).length,dr.length?(b/dr.length*100).toFixed(1)+'%':'0%',STATE.resources.filter(r=>r.dept===dept&&isResigned(r)).length]);
+      row.alignment={horizontal:'center'};
+    });
+    const tot=ws.addRow(['TOTAL',STATE.resources.filter(r=>!isResigned(r)&&(!m||r.months[m]!==undefined)).length,STATE.resources.filter(r=>isBill(r,m)).length,STATE.resources.filter(r=>isNB(r,m)).length,STATE.resources.filter(r=>isNB(r,m)&&r.exp>2).length,STATE.resources.filter(r=>isNB(r,m)&&r.exp<=2).length,'—',STATE.resources.filter(r=>isResigned(r)).length]);
+    tot.font={bold:true,color:{argb:C.totFg},size:10};tot.fill={type:'pattern',pattern:'solid',fgColor:{argb:C.totBg}};tot.alignment={horizontal:'center'};
+    ws.columns=[{width:26},{width:8},{width:10},{width:14},{width:12},{width:12},{width:8},{width:14}];
+  },
+  async _download(wb,filename){
+    const buf=await wb.xlsx.writeBuffer();
+    const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    const url=URL.createObjectURL(blob);const a=document.createElement('a');
+    a.href=url;a.download=filename;document.body.appendChild(a);a.click();
+    setTimeout(()=>{URL.revokeObjectURL(url);document.body.removeChild(a);},200);
+  },
+  async all(){
     const m=activeMonth(),ts=new Date().toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
-    const wb=XLSX.utils.book_new();
-    // Summary
-    const sum=[['Resource Utilization Report'],[`Exported on: ${ts}`],[`Selected Month: ${m||'All'}`],[''],
-      ['Department','Total','Billable','Non-Billable','NB Exp>2','NB Exp≤2','Util%','Resignations'],
-      ...CFG.DEPTS.map(dept=>{
-        const dr=STATE.resources.filter(r=>r.dept===dept&&!isResigned(r)&&(!m||r.months[m]!==undefined));
-        const b=dr.filter(r=>isBill(r,m)).length,nb=dr.filter(r=>isNB(r,m));
-        return[dept,dr.length,b,nb.length,nb.filter(r=>r.exp>2).length,nb.filter(r=>r.exp<=2).length,dr.length?(b/dr.length*100).toFixed(1)+'%':'0%',STATE.resources.filter(r=>r.dept===dept&&isResigned(r)).length];
-      }),
-      ['TOTAL',STATE.resources.filter(r=>!isResigned(r)).length,STATE.resources.filter(r=>isBill(r,m)).length,STATE.resources.filter(r=>isNB(r,m)).length,STATE.resources.filter(r=>isNB(r,m)&&r.exp>2).length,STATE.resources.filter(r=>isNB(r,m)&&r.exp<=2).length,'—',STATE.resources.filter(r=>isResigned(r)).length]
-    ];
-    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(sum),'Summary');
-    [
-      {n:'All Resources',d:STATE.resources},
-      {n:'Billable',d:STATE.resources.filter(r=>isBill(r,m))},
-      {n:'Non-Billable GT2',d:STATE.resources.filter(r=>isNB(r,m)&&r.exp>2)},
-      {n:'Non-Billable LT2',d:STATE.resources.filter(r=>isNB(r,m)&&r.exp<=2)},
-      {n:'Resignations',d:STATE.resources.filter(r=>isResigned(r))},
-      ...CFG.DEPTS.map(d=>({n:d,d:STATE.resources.filter(r=>r.dept===d)}))
-    ].forEach(({n,d})=>{const rows=this._rows(d,m);const ws=XLSX.utils.aoa_to_sheet(rows);this._style(ws,d.length);XLSX.utils.book_append_sheet(wb,ws,n);});
-    // Utilization Planning sheet
+    const wb=new ExcelJS.Workbook();wb.creator='OSI Digital Resource Tracker';wb.created=new Date();
+    this._applySum(wb.addWorksheet('Summary'),ts,m);
+    [{n:'All Resources',d:STATE.resources},{n:'Billable',d:STATE.resources.filter(r=>isBill(r,m))},{n:'Non-Billable GT2',d:STATE.resources.filter(r=>isNB(r,m)&&r.exp>2)},{n:'Non-Billable LT2',d:STATE.resources.filter(r=>isNB(r,m)&&r.exp<=2)},{n:'Resignations',d:STATE.resources.filter(r=>isResigned(r))}].forEach(({n,d})=>this._applySheet(wb.addWorksheet(n),this._rows(d,m)));
     const planNB=activeRes(m).filter(r=>isNB(r,m));
-    const wsPlan=XLSX.utils.aoa_to_sheet(this._planRows(planNB,m));
-    this._style(wsPlan,planNB.length);XLSX.utils.book_append_sheet(wb,wsPlan,'Util. Planning');
-    XLSX.writeFile(wb,`Utilization_${new Date().toISOString().slice(0,10)}.xlsx`);
-    showToast('✅ Excel exported','ok');
+    this._applySheet(wb.addWorksheet('Util. Planning'),this._planRows(planNB,m));
+    await this._download(wb,`OSI_Utilization_${new Date().toISOString().slice(0,10)}.xlsx`);
+    showToast('✅ Excel exported — 7 sheets','ok');
   },
-  filtered(type){
+  async filtered(type){
     const m=activeMonth();
-    const map={
-      all:()=>activeRes(m),billable:()=>activeRes(m).filter(r=>isBill(r,m)),
-      nbGt2:()=>activeRes(m).filter(r=>isNB(r,m)&&r.exp>2),nbLt2:()=>activeRes(m).filter(r=>isNB(r,m)&&r.exp<=2),
-      resignations:()=>STATE.resources.filter(r=>isResigned(r)),
-      planning:()=>activeRes(m).filter(r=>isNB(r,m))
-    };
+    const map={all:()=>STATE.resources,billable:()=>STATE.resources.filter(r=>isBill(r,m)),nbGt2:()=>STATE.resources.filter(r=>isNB(r,m)&&r.exp>2),nbLt2:()=>STATE.resources.filter(r=>isNB(r,m)&&r.exp<=2),resignations:()=>STATE.resources.filter(r=>isResigned(r)),planning:()=>activeRes(m).filter(r=>isNB(r,m))};
     const data=(map[type]||map.all)();
-    const wb=XLSX.utils.book_new();
-    let rows,ws;
-    if(type==='planning'){rows=this._planRows(data,m);}else{rows=this._rows(data,m);}
-    ws=XLSX.utils.aoa_to_sheet(rows);this._style(ws,data.length);
-    XLSX.utils.book_append_sheet(wb,ws,type);
-    XLSX.writeFile(wb,`${type}_${new Date().toISOString().slice(0,10)}.xlsx`);
+    const wb=new ExcelJS.Workbook();wb.creator='OSI Digital';
+    const rows=type==='planning'?this._planRows(data,m):this._rows(data,m);
+    this._applySheet(wb.addWorksheet(type),rows);
+    await this._download(wb,`${type}_${new Date().toISOString().slice(0,10)}.xlsx`);
     showToast(`✅ ${data.length} records exported`,'ok');
   }
 };
+
 
 /* ── NAV & REFRESH ── */
 const VIEW_TITLES={dashboard:'Dashboard',allResources:'All Resources',billable:'Billable Resources',nbGt2:'Non-Billable · Exp > 2 Years',nbLt2:'Non-Billable · Exp ≤ 2 Years',resignations:'Resignations',planning:'📋 Utilization Planning'};
