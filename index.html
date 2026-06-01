@@ -450,8 +450,6 @@ tbody td{padding:7px 11px;font-size:12px;color:var(--g700);vertical-align:middle
         <div class="t-tb">
           <h3>NB · Exp &gt; 2 Years</h3>
           <input class="srch" id="srchNbGt2" placeholder="🔍 Search..." oninput="PAG.reset('nbGt2');debouncedRender('renderNbGt2')">
-          <select class="fsel" id="fNbGt2Plan" onchange="PAG.reset('nbGt2');renderNbGt2()"><option value="">All Plan Status</option><option value="no-plan">No Plan</option><option value="Critical">Critical</option><option value="In Progress">In Progress</option><option value="Planned">Planned</option><option value="On Hold">On Hold</option><option value="Completed">Completed</option></select>
-          <select class="fsel" id="fNbGt2Pri" onchange="PAG.reset('nbGt2');renderNbGt2()"><option value="">All Priority</option><option value="High">High</option><option value="Medium">Medium</option><option value="Low">Low</option></select>
           <button class="btn btn-s btn-sm" onclick="EXPORT.filtered('nbGt2')">⬇ Export</button>
         </div>
         <div class="t-wrap"><table><thead><tr>
@@ -472,8 +470,6 @@ tbody td{padding:7px 11px;font-size:12px;color:var(--g700);vertical-align:middle
         <div class="t-tb">
           <h3>NB · Exp ≤ 2 Years</h3>
           <input class="srch" id="srchNbLt2" placeholder="🔍 Search..." oninput="PAG.reset('nbLt2');debouncedRender('renderNbLt2')">
-          <select class="fsel" id="fNbLt2Plan" onchange="PAG.reset('nbLt2');renderNbLt2()"><option value="">All Plan Status</option><option value="no-plan">No Plan</option><option value="Critical">Critical</option><option value="In Progress">In Progress</option><option value="Planned">Planned</option><option value="On Hold">On Hold</option><option value="Completed">Completed</option></select>
-          <select class="fsel" id="fNbLt2Pri" onchange="PAG.reset('nbLt2');renderNbLt2()"><option value="">All Priority</option><option value="High">High</option><option value="Medium">Medium</option><option value="Low">Low</option></select>
           <button class="btn btn-s btn-sm" onclick="EXPORT.filtered('nbLt2')">⬇ Export</button>
         </div>
         <div class="t-wrap"><table><thead><tr>
@@ -519,14 +515,6 @@ tbody td{padding:7px 11px;font-size:12px;color:var(--g700);vertical-align:middle
         <div class="t-tb">
           <h3>📋 Utilization Planning</h3>
           <input class="srch" id="srchPlan" placeholder="🔍 Search name or planned action…" oninput="PAG.reset('planning');debouncedRender('renderPlanningView')">
-          <select class="fsel" id="fPlanStatus" onchange="PAG.reset('planning');renderPlanningView()">
-            <option value="">All Status</option><option value="no-plan">No Plan</option>
-            <option value="Critical">Critical</option><option value="In Progress">In Progress</option>
-            <option value="Planned">Planned</option><option value="On Hold">On Hold</option><option value="Completed">Completed</option>
-          </select>
-          <select class="fsel" id="fPlanPriority" onchange="PAG.reset('planning');renderPlanningView()">
-            <option value="">All Priority</option><option value="High">High</option><option value="Medium">Medium</option><option value="Low">Low</option>
-          </select>
           <select class="fsel" id="fPlanDept" onchange="PAG.reset('planning');renderPlanningView()">
             <option value="">All Depts</option><option value="DNET">DNET</option><option value="JAVA">JAVA</option><option value="PPR">PPR</option><option value="MOBL">MOBL</option>
           </select>
@@ -1357,9 +1345,12 @@ const UPLOAD={
         if(!resources.length){showToast('⚠️ No resources found','warn');return;}
         let summary;
         if(STATE.uploadMode==='merge'&&STATE.resources.length>0){
+          const oldMonths=new Set(STATE.months);
           months.forEach(m=>{if(!STATE.months.includes(m))STATE.months.push(m);});
           STATE.months.sort((a,b)=>m2d(a)-m2d(b));
           summary=MERGER.merge(STATE.resources,resources);
+          // Auto carry-forward previous month data into any newly added months
+          STATE.months.filter(m=>!oldMonths.has(m)).forEach(m=>carryForwardMonth(m));
         }else{
           STATE.resources=resources;STATE.months=months;
           summary={updated:resources.length,added:0,missing:0,utilChanges:0};
@@ -1611,11 +1602,13 @@ const MODAL={
     const m=STATE.newMonth;if(!m){showToast('⚠️ Select a month','warn');return;}
     if(!STATE.months.includes(m)){
       STATE.months.push(m);STATE.months.sort((a,b)=>m2d(a)-m2d(b));
+      // Initialise empty slots then carry forward from previous month
       STATE.resources.forEach(r=>{if(!r.months[m])r.months[m]={billable:null,client:'',project:''};});
+      carryForwardMonth(m);
       STATE.selectedMonth=m;$('monthSel').value=m;
       await STORAGE.save();
     }
-    closeModal('mdMonth');refresh();showToast(`📅 ${m} added`,'ok');
+    closeModal('mdMonth');refresh();showToast(`📅 ${m} added with previous month data carried forward`,'ok');
   }
 };
 
@@ -1671,6 +1664,76 @@ function renderNotifPanel(){
   </div>`).join('');
 }
 
+/* ── CARRY FORWARD ── */
+// Copy previous month's utilization to newMonth for resources that have no data there.
+function carryForwardMonth(newMonth){
+  const sorted=STATE.months.slice().sort((a,b)=>m2d(a)-m2d(b));
+  const idx=sorted.indexOf(newMonth);
+  if(idx<=0)return;
+  const prev=sorted[idx-1];
+  let carried=0;
+  STATE.resources.forEach(r=>{
+    const ex=r.months[newMonth];
+    const hasData=ex&&(ex.billable!==null&&ex.billable!==undefined||ex.client||ex.project);
+    if(!hasData&&r.months[prev]){r.months[newMonth]={...r.months[prev]};carried++;}
+  });
+  if(carried)console.log(`[Carry forward] ${prev} → ${newMonth}: ${carried} resources`);
+}
+
+// On every app load: ensure current month has utilization data carried from previous month.
+// Handles: missing months, months added with empty data, and chains across multiple missed months.
+async function autoCarryForward(){
+  if(!STATE.resources.length||!STATE.months.length)return;
+
+  const now=new Date();
+  const curMo=now.toLocaleDateString('en-US',{month:'short',year:'numeric'});
+
+  // If current month exists AND already has real data → nothing to do
+  if(STATE.months.includes(curMo)){
+    const hasRealData=STATE.resources.some(r=>{
+      const d=r.months[curMo];
+      return d&&(d.billable!==null&&d.billable!==undefined||d.client||d.project);
+    });
+    if(hasRealData)return;
+  }
+
+  const sorted=STATE.months.slice().sort((a,b)=>m2d(a)-m2d(b));
+  const lastDate=m2d(sorted[sorted.length-1]);
+  const cur=new Date(now.getFullYear(),now.getMonth(),1);
+
+  // Build list of months to add (missing between last known and current)
+  const toAdd=[];
+  const d=new Date(lastDate.getFullYear(),lastDate.getMonth()+1,1);
+  while(d<=cur){
+    const lbl=d.toLocaleDateString('en-US',{month:'short',year:'numeric'});
+    if(!STATE.months.includes(lbl))toAdd.push(lbl);
+    d.setMonth(d.getMonth()+1);
+  }
+
+  // Months to carry-forward: newly added months + current month (if it exists but has no data)
+  const toProcess=[...toAdd];
+  if(!toProcess.includes(curMo))toProcess.push(curMo);
+
+  if(!toProcess.length)return;
+
+  toProcess.forEach(mo=>{
+    // Add to months list if missing
+    if(!STATE.months.includes(mo)){
+      STATE.months.push(mo);
+      STATE.months.sort((a,b)=>m2d(a)-m2d(b));
+    }
+    // Initialise empty slot for each resource then carry forward
+    STATE.resources.forEach(r=>{if(!r.months[mo])r.months[mo]={billable:null,client:'',project:''};});
+    carryForwardMonth(mo);
+  });
+
+  STATE.selectedMonth=curMo;
+  await STORAGE.save();
+  const prev=sorted[sorted.length-1];
+  showToast(`📅 ${curMo} — utilization carried forward from ${prev}`,'ok');
+  refresh();
+}
+
 /* ── KPI NAVIGATION ── */
 function navigateKPI(view, filterId, filterVal){
   showView(view);
@@ -1706,10 +1769,10 @@ function renderDashboard(){
     {cl:'am',lb:'NB · Exp ≤ 2 yrs',v:nbLt2.length,s:'Junior bench',fn:"showView('nbLt2')"},
     {cl:'pu',lb:'Resignations This Month',v:rMo,s:'Current month exits',fn:`navigateKPI('resignations','fResignMo','${curMoLbl}')`},
     {cl:'te',lb:'Resignations This Year',v:rYr,s:`${yr} total exits`,fn:`navigateKPI('resignations','fResignYr','${yr}')`},
-    {cl:'re',lb:'NB Without Plan',v:noPlan,s:'Need utilization plan',fn:"navigateKPI('planning','fPlanStatus','no-plan')"},
-    {cl:'or',lb:'Critical NB',v:criticalNB,s:'Immediate action required',fn:"navigateKPI('planning','fPlanStatus','Critical')"},
+    {cl:'re',lb:'NB Without Plan',v:noPlan,s:'Need utilization plan',fn:"showView('planning')"},
+    {cl:'or',lb:'Critical NB',v:criticalNB,s:'Immediate action required',fn:"showView('planning')"},
     {cl:'am',lb:'Planned This Month',v:planThisMo,s:'Target billing date',fn:"showView('planning')"},
-    {cl:'gr',lb:'Expected Conversions',v:expConvert,s:'In progress + planned',fn:"navigateKPI('planning','fPlanStatus','In Progress')"},
+    {cl:'gr',lb:'Expected Conversions',v:expConvert,s:'In progress + planned',fn:"showView('planning')"},
   ].map(s=>`<div class="stat-card ${s.cl}${!hasData?' skeleton':''} kpi-link" onclick="${s.fn}" title="Click to explore"><div class="sl">${s.lb}</div><div class="sv">${s.v}</div><div class="ss">${s.s}</div></div>`).join('');
 
   $('deptGrid').innerHTML=CFG.DEPTS.map(dept=>{
@@ -1791,14 +1854,10 @@ function renderBillable(){
 
 function renderNbGt2(){
   const srch=($('srchNbGt2').value||'').toLowerCase(),m=activeMonth();
-  const fPlan=$('fNbGt2Plan').value,fPri=$('fNbGt2Pri').value;
-  STATE.filters.nbGt2={search:srch,planStatus:fPlan,priority:fPri};
+  STATE.filters.nbGt2={search:srch};
   const data=activeRes(m).filter(r=>{
     if(!isNB(r,m)||r.exp<=2)return false;
     if(srch&&!r.name.toLowerCase().includes(srch)&&!r.platform.toLowerCase().includes(srch))return false;
-    if(fPlan==='no-plan'){if(r.uPlan?.status)return false;}
-    else if(fPlan&&r.uPlan?.status!==fPlan)return false;
-    if(fPri&&r.uPlan?.priority!==fPri)return false;
     return true;
   });
   const sl=PAG.slice('nbGt2',data);
@@ -1814,14 +1873,10 @@ function renderNbGt2(){
 
 function renderNbLt2(){
   const srch=($('srchNbLt2').value||'').toLowerCase(),m=activeMonth();
-  const fPlan=$('fNbLt2Plan').value,fPri=$('fNbLt2Pri').value;
-  STATE.filters.nbLt2={search:srch,planStatus:fPlan,priority:fPri};
+  STATE.filters.nbLt2={search:srch};
   const data=activeRes(m).filter(r=>{
     if(!isNB(r,m)||r.exp>2)return false;
     if(srch&&!r.name.toLowerCase().includes(srch)&&!r.platform.toLowerCase().includes(srch))return false;
-    if(fPlan==='no-plan'){if(r.uPlan?.status)return false;}
-    else if(fPlan&&r.uPlan?.status!==fPlan)return false;
-    if(fPri&&r.uPlan?.priority!==fPri)return false;
     return true;
   });
   const sl=PAG.slice('nbLt2',data);
@@ -1885,8 +1940,8 @@ function toggleDept(d){STATE.dept=STATE.dept===d?'':d;$('deptSel').value=STATE.d
 
 function renderPlanningView(){
   const srch=($('srchPlan').value||'').toLowerCase();
-  const fStatus=$('fPlanStatus').value,fPri=$('fPlanPriority').value,fDept=$('fPlanDept').value;
-  STATE.filters.planning={search:srch,status:fStatus,priority:fPri};
+  const fDept=$('fPlanDept').value;
+  STATE.filters.planning={search:srch};
   const m=activeMonth();
   const allNB=activeRes(m).filter(r=>isNB(r,m));
   const now=new Date();
@@ -1897,24 +1952,16 @@ function renderPlanningView(){
   const planMo=allNB.filter(r=>r.uPlan?.targetDate instanceof Date&&!isNaN(r.uPlan.targetDate)&&r.uPlan.targetDate.toLocaleDateString('en-US',{month:'short',year:'numeric'})===curMoLbl).length;
   const expConvert=allNB.filter(r=>r.uPlan?.status==='In Progress'||r.uPlan?.status==='Planned').length;
 
-  // Clickable KPI cards — filter the planning table inline
   $('planStats').innerHTML=[
-    {cl:'re',lb:'No Utilization Plan',v:noPlan,s:'Need immediate attention',
-      fn:`$('fPlanStatus').value='no-plan';PAG.reset('planning');renderPlanningView()`},
-    {cl:'or',lb:'Critical NB Resources',v:critical,s:'Prioritize for placement',
-      fn:`$('fPlanStatus').value='Critical';PAG.reset('planning');renderPlanningView()`},
-    {cl:'am',lb:'Target Date This Month',v:planMo,s:'Billing planned '+curMoLbl,
-      fn:`$('fPlanStatus').value='';PAG.reset('planning');renderPlanningView()`},
-    {cl:'gr',lb:'Expected Conversions',v:expConvert,s:'In progress + planned',
-      fn:`$('fPlanStatus').value='In Progress';PAG.reset('planning');renderPlanningView()`},
+    {cl:'re',lb:'No Utilization Plan',v:noPlan,s:'Need immediate attention',fn:`PAG.reset('planning');renderPlanningView()`},
+    {cl:'or',lb:'Critical NB Resources',v:critical,s:'Prioritize for placement',fn:`PAG.reset('planning');renderPlanningView()`},
+    {cl:'am',lb:'Target Date This Month',v:planMo,s:'Billing planned '+curMoLbl,fn:`PAG.reset('planning');renderPlanningView()`},
+    {cl:'gr',lb:'Expected Conversions',v:expConvert,s:'In progress + planned',fn:`PAG.reset('planning');renderPlanningView()`},
   ].map(s=>`<div class="stat-card ${s.cl} kpi-link" onclick="${s.fn}"><div class="sl">${s.lb}</div><div class="sv">${s.v}</div><div class="ss">${s.s}</div></div>`).join('');
 
   let data=allNB.filter(r=>{
     if(fDept&&r.dept!==fDept)return false;
     if(srch&&!r.name.toLowerCase().includes(srch)&&!String(r.uPlan?.action||'').toLowerCase().includes(srch))return false;
-    if(fStatus==='no-plan'){if(r.uPlan?.status)return false;}
-    else if(fStatus&&r.uPlan?.status!==fStatus)return false;
-    if(fPri&&r.uPlan?.priority!==fPri)return false;
     return true;
   });
 
@@ -2137,7 +2184,11 @@ document.addEventListener('DOMContentLoaded',async()=>{
   await STORAGE.init();
   showToast('⏳ Loading from cloud…');
   const restored=await STORAGE.load();
-  if(restored){$('sbFile').textContent='Cloud data loaded';$('sbDate').textContent=new Date().toLocaleDateString();}
+  if(restored){
+    $('sbFile').textContent='Cloud data loaded';
+    $('sbDate').textContent=new Date().toLocaleDateString();
+    await autoCarryForward(); // auto-add current month with carry-forward if missing
+  }
 
   // Register PAG render functions (enables PAG.goto/setSize to call correct fn)
   PAG.reg('all',   renderAll);
