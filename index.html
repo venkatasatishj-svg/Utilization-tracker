@@ -88,9 +88,32 @@ body{font-family:'DM Sans',sans-serif;background:var(--g50);color:var(--g800);fo
 .ob-tip:hover .ob-tipbox{opacity:1;pointer-events:auto}
 .ob-tipbox{position:absolute;bottom:130%;left:0;background:var(--g800);color:#fff;border-radius:6px;padding:8px 12px;font-size:11px;z-index:500;opacity:0;pointer-events:none;transition:opacity .15s;box-shadow:var(--s2);line-height:1.6;white-space:nowrap;min-width:220px}
 .ob-tipbox::after{content:'';position:absolute;top:100%;left:16px;border:5px solid transparent;border-top-color:var(--g800)}
-/* skeleton stat cards for no-data state */
-.stat-card.skeleton .sv{color:var(--g200);background:var(--g100);border-radius:4px;display:inline-block;min-width:32px}
-.stat-card.skeleton .ss{color:var(--g200)}
+.stat-card.kpi-link{cursor:pointer}
+.stat-card.kpi-link:hover{box-shadow:var(--s3);transform:translateY(-3px)}
+.stat-card.kpi-link:active{transform:translateY(-1px)}
+/* Progress log */
+.prog-list{display:flex;flex-direction:column;gap:8px;max-height:360px;overflow-y:auto;padding:2px}
+.prog-entry{background:var(--g50);border:1px solid var(--g200);border-left:3px solid var(--bm);border-radius:var(--rs);padding:10px 13px}
+.prog-entry-hd{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.prog-entry-date{font-size:10px;font-weight:700;color:var(--bm);background:var(--bl);border-radius:3px;padding:2px 7px;white-space:nowrap}
+.prog-entry-target{font-size:10px;color:var(--g500);margin-left:auto;white-space:nowrap}
+.prog-entry-comment{font-size:13px;color:var(--g700);line-height:1.5}
+.prog-empty{text-align:center;padding:28px;color:var(--g400);font-size:13px}
+/* Progress entry states */
+.prog-entry-done{border-left-color:var(--green)!important;opacity:.65}
+.prog-entry-done .prog-entry-comment{text-decoration:line-through;color:var(--g400)}
+.prog-entry-overdue{border-left-color:var(--red)!important;background:var(--rxl)!important}
+/* Notification bell */
+.notif-btn{position:relative;background:none;border:none;cursor:pointer;padding:6px 8px;border-radius:6px;color:var(--g600);font-size:19px;line-height:1;transition:background .15s;flex-shrink:0}
+.notif-btn:hover{background:var(--g100)}
+.notif-badge{position:absolute;top:1px;right:2px;background:var(--red);color:#fff;border-radius:10px;min-width:16px;height:16px;font-size:9px;font-weight:700;display:none;align-items:center;justify-content:center;padding:0 3px}
+.notif-panel{position:fixed;top:58px;right:12px;width:370px;max-height:480px;overflow-y:auto;background:var(--w);border:1px solid var(--g200);border-radius:var(--rm);box-shadow:var(--s3);z-index:300;display:none}
+.notif-hd{padding:11px 15px;font-weight:700;font-size:13px;border-bottom:1px solid var(--g100);display:flex;align-items:center;gap:8px;position:sticky;top:0;background:var(--w);z-index:1}
+.notif-close-btn{margin-left:auto;background:none;border:none;cursor:pointer;color:var(--g400);font-size:16px;line-height:1;padding:2px 5px}
+.notif-item{padding:10px 15px;border-bottom:1px solid var(--g100);cursor:pointer;transition:background .12s}
+.notif-item:hover{background:var(--g50)}
+.notif-empty{padding:28px;text-align:center;color:var(--g400);font-size:13px}
+.prog-new{background:var(--bxl);border:1px solid var(--bl);border-radius:var(--rs);padding:12px 14px;margin-top:12px}
 /* chart empty placeholder */
 .chart-ph{display:flex;align-items:center;justify-content:center;height:100%;color:var(--g300);font-size:12px;flex-direction:column;gap:6px}
 .chart-ph span{font-size:26px}
@@ -336,8 +359,10 @@ tbody td{padding:7px 11px;font-size:12px;color:var(--g700);vertical-align:middle
       </select>
       <button class="btn btn-p btn-sm" id="hUpload">📂 Upload</button>
       <button class="btn btn-ok btn-sm" id="hExport">⬇ Export</button>
+      <button class="notif-btn" id="notifBtn" onclick="toggleNotifPanel()" title="Notifications — overdue progress targets">&#128276;<span class="notif-badge" id="notifBadge"></span></button>
     </div>
   </header>
+  <div id="notifPanel" class="notif-panel"></div>
 
   <!-- CONTENT -->
   <main class="main-content">
@@ -493,7 +518,7 @@ tbody td{padding:7px 11px;font-size:12px;color:var(--g700);vertical-align:middle
       <div class="table-card">
         <div class="t-tb">
           <h3>📋 Utilization Planning</h3>
-          <input class="srch" id="srchPlan" placeholder="🔍 Name, action, manager..." oninput="PAG.reset('planning');debouncedRender('renderPlanningView')">
+          <input class="srch" id="srchPlan" placeholder="🔍 Search name or planned action…" oninput="PAG.reset('planning');debouncedRender('renderPlanningView')">
           <select class="fsel" id="fPlanStatus" onchange="PAG.reset('planning');renderPlanningView()">
             <option value="">All Status</option><option value="no-plan">No Plan</option>
             <option value="Critical">Critical</option><option value="In Progress">In Progress</option>
@@ -508,9 +533,8 @@ tbody td{padding:7px 11px;font-size:12px;color:var(--g700);vertical-align:middle
           <button class="btn btn-s btn-sm" onclick="EXPORT.filtered('planning')">⬇ Export</button>
         </div>
         <div class="t-wrap"><table><thead><tr>
-          <th>Resource</th><th>Dept</th><th>Exp</th><th>% Bill</th>
-          <th>Plan Status</th><th>Priority</th><th>Planned Action</th>
-          <th>Target Date</th><th>Manager</th><th>Follow-up</th><th></th>
+          <th>Resource</th><th>Dept</th><th>Exp / %Bill</th>
+          <th>Progress Updates</th><th>Actions</th>
         </tr></thead><tbody id="planBody"></tbody></table></div>
         <div class="t-ft" id="ftPlan"></div>
       </div>
@@ -571,31 +595,13 @@ tbody td{padding:7px 11px;font-size:12px;color:var(--g700);vertical-align:middle
         <div class="fi"><label class="fl">Secondary Platform</label><input type="text" class="inp" id="fPlat2" placeholder="React, SQL..."></div>
         <div class="fi"><label class="fl">Designation</label><input type="text" class="inp" id="fDesig" placeholder="SSE, TL, PSE..."></div>
         <div class="fi"><label class="fl">Date of Joining</label><input type="date" class="inp" id="fDoj"></div>
-        <div class="fi"><label class="fl">Total Exp (yrs)</label><input type="number" class="inp" id="fExp" step="0.1" min="0"></div>
-        <div class="fi"><label class="fl">OSI YOE (yrs)</label><input type="number" class="inp" id="fOsiYoe" step="0.1" min="0"></div>
-        <div class="fi"><label class="fl">Before OSI (yrs)</label><input type="number" class="inp" id="fBeforeOsi" step="0.1" min="0"></div>
+        <div class="fi"><label class="fl">Total Exp (yrs)</label><input type="number" class="inp" id="fExp" step="0.01" min="0" placeholder="e.g. 3.50"></div>
+        <div class="fi"><label class="fl">OSI YOE (yrs)</label><input type="number" class="inp" id="fOsiYoe" step="0.01" min="0" placeholder="e.g. 1.50"></div>
+        <div class="fi"><label class="fl">Before OSI (yrs)</label><input type="number" class="inp" id="fBeforeOsi" step="0.01" min="0" placeholder="e.g. 2.00"></div>
         <div class="fi"><label class="fl">Exit Date</label><input type="date" class="inp" id="fExit"></div>
         <div class="fi full"><label class="fl">Remarks</label><textarea class="fta" id="fRemarks" placeholder="Resignation, replacement details..."></textarea></div>
         <div class="fi full"><label class="fl">Utilization Comments</label><textarea class="fta" id="fUtiCmt" placeholder="Client pipeline, bench activities..."></textarea></div>
         <div class="fi full"><label class="fl">Replacement Status</label><input type="text" class="inp" id="fReplSt" placeholder="Not started / In progress / Hired"></div>
-      </div>
-      <div class="fsec">📋 Utilization Plan</div>
-      <div class="fg">
-        <div class="fi"><label class="fl">Plan Status</label>
-          <select class="inp fsel-m" id="fUpStatus">
-            <option value="">— No Plan</option><option value="Critical">🔴 Critical</option>
-            <option value="In Progress">🔵 In Progress</option><option value="Planned">🟡 Planned</option>
-            <option value="On Hold">⏸ On Hold</option><option value="Completed">✅ Completed</option>
-          </select></div>
-        <div class="fi"><label class="fl">Priority</label>
-          <select class="inp fsel-m" id="fUpPriority">
-            <option value="">—</option><option value="High">↑ High</option>
-            <option value="Medium">→ Medium</option><option value="Low">↓ Low</option>
-          </select></div>
-        <div class="fi"><label class="fl">Target Billing Date</label><input type="date" class="inp" id="fUpTarget"></div>
-        <div class="fi"><label class="fl">Follow-up Date</label><input type="date" class="inp" id="fUpFollowUp"></div>
-        <div class="fi"><label class="fl">Responsible Manager</label><input type="text" class="inp" id="fUpManager" placeholder="Manager name"></div>
-        <div class="fi full"><label class="fl">Planned Action</label><input type="text" class="inp" id="fUpAction" placeholder="e.g. Submit to TCS pipeline, Upskilling in React..."></div>
       </div>
       <div class="fsec">Monthly Utilization</div>
       <div id="mthRows" style="border:1px solid var(--g100);border-radius:6px;padding:6px 10px;max-height:290px;overflow-y:auto">
@@ -627,6 +633,46 @@ tbody td{padding:7px 11px;font-size:12px;color:var(--g700);vertical-align:middle
   </div>
 </div>
 
+<!-- ══ PROGRESS LOG MODAL ══ -->
+<div class="modal-overlay" id="mdProgress">
+  <div class="modal">
+    <div class="m-hd">
+      <h2 id="mdProgressTitle">📝 Progress Log</h2>
+      <button class="m-cl" onclick="closeModal('mdProgress')">✕</button>
+    </div>
+    <div class="m-bd" style="padding-bottom:12px">
+      <div id="progList" class="prog-list"></div>
+      <!-- Add new entry -->
+      <div class="prog-new">
+        <div class="fsec" style="margin-top:0;margin-bottom:10px">➕ Add Progress Entry</div>
+        <div class="fg">
+          <div class="fi">
+            <label class="fl">Date Added</label>
+            <input type="text" class="inp" id="pDate" readonly
+              style="background:var(--g100);color:var(--g500);cursor:default;font-family:'DM Mono',monospace;font-size:12px">
+          </div>
+          <div class="fi">
+            <label class="fl">Target Date</label>
+            <input type="date" class="inp" id="pTargetDate"
+            oninput="this.classList.remove('invalid')"
+            min="">
+          </div>
+          <div class="fi full">
+            <label class="fl">Progress Comments *</label>
+            <textarea class="fta" id="pComment" rows="2"
+              placeholder="Describe actions taken, pipeline discussions, interview status, next steps…"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="m-ft">
+      <button class="btn btn-s" id="btnClosePlan" onclick="MODAL.closePlan()" title="Mark this resource's utilization plan as completed">✅ Close Plan</button>
+      <button class="btn btn-s" onclick="closeModal('mdProgress')">Cancel</button>
+      <button class="btn btn-p" onclick="MODAL.addProgress()">➕ Add Entry</button>
+    </div>
+  </div>
+</div>
+
 <script>
 'use strict';
 /* ── CONFIG ── */
@@ -639,7 +685,7 @@ const CFG = {
   LS_D:'rut_data',LS_M:'rut_months',LS_H:'rut_hist',LS_P:'rut_prefs',
   PLAN_STATUSES: ['','Critical','In Progress','Planned','On Hold','Completed'],
   PRIORITIES: ['','High','Medium','Low'],
-  EP: {status:'',action:'',targetDate:null,manager:'',followUpDate:null,priority:''}
+  EP: {status:'',action:'',targetDate:null,manager:'',followUpDate:null,priority:'',progress:[]}
 };
 
 /* ── STATE ── */
@@ -742,7 +788,17 @@ function priorityBadge(r){
   return`<span class="badge ${PRI_CLS[p]||'bgr'}" style="font-size:9px;margin-left:2px">${PRI_IC[p]||''} ${p}</span>`;
 }
 function planCell(r){
-  return`<div style="display:flex;flex-direction:column;gap:3px">${planBadge(r)}${priorityBadge(r)}</div>`;
+  const cnt=(r.uPlan?.progress||[]).length;
+  const latest=cnt?(r.uPlan.progress[cnt-1]):null;
+  return`<div style="display:flex;flex-direction:column;gap:3px">
+    <div style="display:flex;flex-wrap:wrap;gap:3px">${planBadge(r)}${priorityBadge(r)}</div>
+    ${cnt?`<div style="font-size:10px;color:var(--g500);margin-top:1px">
+      📝 ${cnt} update${cnt>1?'s':''}
+      ${latest?.targetDate?`· 🎯 ${latest.targetDate}`:''}
+    </div>
+    <div style="font-size:10px;color:var(--g600);line-height:1.4">${trunc(latest.comment,40)}</div>`
+    :''}
+  </div>`;
 }
 function inlineSel(id,field,options,cur,width='100%'){
   return`<select class="fsel" style="font-size:11px;padding:3px 5px;width:${width}" onchange="updatePlan(${id},'${field}',this.value)">${options.map(o=>`<option value="${o}" ${o===cur?'selected':''}>${o||'—'}</option>`).join('')}</select>`;
@@ -756,10 +812,11 @@ function inlineDateInp(id,field,val){
 }
 function updatePlan(id,field,val){
   const r=STATE.resources.find(x=>x.id===id);if(!r)return;
-  if(!r.uPlan)r.uPlan={...CFG.EP};
+  if(!r.uPlan)r.uPlan={...CFG.EP,progress:[]};
   if(field==='targetDate'||field==='followUpDate')r.uPlan[field]=val?new Date(val):null;
   else r.uPlan[field]=val;
-  STORAGE.saveResource(r);updateBadges();
+  STORAGE.saveResource(r);
+  refresh();
 }
 
 function showToast(msg,type='',dur=3200){
@@ -911,7 +968,7 @@ const STORAGE={
       exitDate:r.exitdate?new Date(r.exitdate):null,
       remarks:r.remarks||'',utiComments:r.uticomments||'',
       replStatus:r.replstatus||'',missing:r.missing||false,
-      uPlan:{...CFG.EP,...up,targetDate:up.targetDate?new Date(up.targetDate):null,followUpDate:up.followUpDate?new Date(up.followUpDate):null},
+      uPlan:{...CFG.EP,...up,progress:Array.isArray(up.progress)?up.progress.map(e=>({...e})):[],targetDate:up.targetDate?new Date(up.targetDate):null,followUpDate:up.followUpDate?new Date(up.followUpDate):null},
       months:r.months||{}
     };
   },
@@ -954,7 +1011,7 @@ const STORAGE={
   },
   _saveLocal(){
     try{
-      const serUp=up=>up?{...up,targetDate:up.targetDate?.toISOString()||null,followUpDate:up.followUpDate?.toISOString()||null}:{...CFG.EP};
+      const serUp=up=>up?{...up,targetDate:up.targetDate?.toISOString()||null,followUpDate:up.followUpDate?.toISOString()||null,progress:Array.isArray(up.progress)?up.progress:[]}:{...CFG.EP,progress:[]};
       const ser=STATE.resources.map(r=>({...r,doj:r.doj?.toISOString()||null,exitDate:r.exitDate?.toISOString()||null,uPlan:serUp(r.uPlan)}));
       localStorage.setItem(CFG.LS_D,JSON.stringify(ser));
       localStorage.setItem(CFG.LS_M,JSON.stringify(STATE.months));
@@ -964,7 +1021,7 @@ const STORAGE={
     try{
       const raw=localStorage.getItem(CFG.LS_D),rawM=localStorage.getItem(CFG.LS_M);
       if(!raw||!rawM)return false;
-      const ru=up=>up?{...CFG.EP,...up,targetDate:up.targetDate?new Date(up.targetDate):null,followUpDate:up.followUpDate?new Date(up.followUpDate):null}:{...CFG.EP};
+      const ru=up=>up?{...CFG.EP,...up,progress:Array.isArray(up.progress)?up.progress.map(e=>({...e})):[] ,targetDate:up.targetDate?new Date(up.targetDate):null,followUpDate:up.followUpDate?new Date(up.followUpDate):null}:{...CFG.EP};
       STATE.resources=JSON.parse(raw).map(r=>({...r,doj:r.doj?new Date(r.doj):null,exitDate:r.exitDate?new Date(r.exitDate):null,uPlan:ru(r.uPlan)}));
       STATE.months=JSON.parse(rawM);
       return STATE.resources.length>0;
@@ -1213,7 +1270,7 @@ const PARSER={
           exitDate,
           remarks:String(exitCol>=0&&remarksCol<row.length?row[remarksCol]||'':'').trim(),
           utiComments:String(exitCol>=0&&commentsCol<row.length?row[commentsCol]||'':'').trim(),
-          replStatus:'',missing:false,uPlan:{...CFG.EP},months
+          replStatus:'',missing:false,uPlan:{...CFG.EP,progress:[]},months
         });
       }catch(rowErr){
         console.warn('Row parse error at row',r,rowErr);
@@ -1241,7 +1298,7 @@ const MERGER={
     incoming.forEach(r=>{
       const key=rKey(r);
       if(exMap.has(key)){const ex=exMap.get(key);const c=this._merge(ex,r);if(c.util)s.utilChanges++;if(c.any){s.updated++;ex.missing=false;}}
-      else{existing.push({...r,id:Date.now()+s.added,uPlan:{...CFG.EP}});s.added++;}
+      else{existing.push({...r,id:Date.now()+s.added,uPlan:{...CFG.EP,progress:[]}});s.added++;}
     });
     return s;
   },
@@ -1255,7 +1312,7 @@ const MERGER={
     if(inc.exp&&inc.exp!==ex.exp){ex.exp=inc.exp;c.any=true;}
     // Merge uPlan: only update non-empty incoming fields
     if(inc.uPlan){
-      if(!ex.uPlan)ex.uPlan={...CFG.EP};
+      if(!ex.uPlan)ex.uPlan={...CFG.EP,progress:[]};
       ['status','action','manager','priority'].forEach(f=>{if(inc.uPlan[f]&&inc.uPlan[f]!==ex.uPlan[f]){ex.uPlan[f]=inc.uPlan[f];c.any=true;}});
       if(inc.uPlan.targetDate){ex.uPlan.targetDate=inc.uPlan.targetDate;c.any=true;}
       if(inc.uPlan.followUpDate){ex.uPlan.followUpDate=inc.uPlan.followUpDate;c.any=true;}
@@ -1334,10 +1391,9 @@ function showSummary(s,fname){
 const MODAL={
   openAdd(){
     $('mdResTitle').textContent='Add Resource';$('fEditId').value='';
-    ['fName','fDesig','fPlat','fPlat2','fRemarks','fUtiCmt','fReplSt','fUpAction','fUpManager'].forEach(id=>$(id).value='');
+    ['fName','fDesig','fPlat','fPlat2','fRemarks','fUtiCmt','fReplSt'].forEach(id=>$(id).value='');
     ['fExp','fOsiYoe','fBeforeOsi'].forEach(id=>$(id).value='');
     $('fDoj').value='';$('fExit').value='';$('fDept').value='JAVA';
-    $('fUpStatus').value='';$('fUpPriority').value='';$('fUpTarget').value='';$('fUpFollowUp').value='';
     const db=$('btnDeleteRes');db.style.display='none';db.textContent='🗑 Delete';db.className='btn btn-danger';
     this._buildMthRows({});openModal('mdResource');
   },
@@ -1347,15 +1403,11 @@ const MODAL={
     $('fName').value=r.name;$('fDept').value=r.dept;$('fPlat').value=r.platform||'';
     $('fPlat2').value=r.platform2||'';$('fDesig').value=r.desig||'';
     $('fDoj').value=r.doj?r.doj.toISOString().split('T')[0]:'';
-    $('fExp').value=r.exp||'';$('fOsiYoe').value=r.osiYoe||'';$('fBeforeOsi').value=r.beforeOsi||'';
+    $('fExp').value=r.exp?parseFloat(r.exp.toFixed(2)):'';
+    $('fOsiYoe').value=r.osiYoe?parseFloat(r.osiYoe.toFixed(2)):'';
+    $('fBeforeOsi').value=r.beforeOsi?parseFloat(r.beforeOsi.toFixed(2)):'';
     $('fExit').value=r.exitDate?r.exitDate.toISOString().split('T')[0]:'';
     $('fRemarks').value=r.remarks||'';$('fUtiCmt').value=r.utiComments||'';$('fReplSt').value=r.replStatus||'';
-    const up=r.uPlan||{};
-    $('fUpStatus').value=up.status||'';$('fUpPriority').value=up.priority||'';
-    $('fUpAction').value=up.action||'';$('fUpManager').value=up.manager||'';
-    $('fUpTarget').value=up.targetDate?up.targetDate.toISOString().split('T')[0]:'';
-    $('fUpFollowUp').value=up.followUpDate?up.followUpDate.toISOString().split('T')[0]:'';
-    // Show delete button, reset to initial state
     const db=$('btnDeleteRes');db.style.display='';db.textContent='🗑 Delete';db.className='btn btn-danger';db._confirmed=false;
     this._buildMthRows(r.months||{});openModal('mdResource');
   },
@@ -1413,13 +1465,12 @@ const MODAL={
     if(eid){
       const r=STATE.resources.find(x=>x.id===eid);
       if(r){
-        Object.assign(r,{name,dept:$('fDept').value,platform:$('fPlat').value.trim(),platform2:$('fPlat2').value.trim(),desig:$('fDesig').value.trim(),doj,exp:parseFloat($('fExp').value)||0,osiYoe:parseFloat($('fOsiYoe').value)||0,beforeOsi:parseFloat($('fBeforeOsi').value)||0,exitDate:exit,remarks:$('fRemarks').value.trim(),utiComments:$('fUtiCmt').value.trim(),replStatus:$('fReplSt').value.trim(),
-          uPlan:{status:$('fUpStatus').value,action:$('fUpAction').value.trim(),targetDate:$('fUpTarget').value?new Date($('fUpTarget').value):null,manager:$('fUpManager').value.trim(),followUpDate:$('fUpFollowUp').value?new Date($('fUpFollowUp').value):null,priority:$('fUpPriority').value}
-        });
+        Object.assign(r,{name,dept:$('fDept').value,platform:$('fPlat').value.trim(),platform2:$('fPlat2').value.trim(),desig:$('fDesig').value.trim(),doj,exp:parseFloat($('fExp').value)||0,osiYoe:parseFloat($('fOsiYoe').value)||0,beforeOsi:parseFloat($('fBeforeOsi').value)||0,exitDate:exit,remarks:$('fRemarks').value.trim(),utiComments:$('fUtiCmt').value.trim(),replStatus:$('fReplSt').value.trim()});
+        // uPlan preserved as-is — managed via Utilization Planning view
         Object.assign(r.months,months);showToast('✅ Resource updated','ok');
       }else{showToast('⚠️ Resource not found — try again','err');}
     }else{
-      STATE.resources.push({id:Date.now(),name,dept:$('fDept').value,platform:$('fPlat').value.trim(),platform2:$('fPlat2').value.trim(),desig:$('fDesig').value.trim(),doj,exp:parseFloat($('fExp').value)||0,osiYoe:parseFloat($('fOsiYoe').value)||0,beforeOsi:parseFloat($('fBeforeOsi').value)||0,exitDate:exit,remarks:$('fRemarks').value.trim(),utiComments:$('fUtiCmt').value.trim(),replStatus:$('fReplSt').value.trim(),missing:false,uPlan:{...CFG.EP},months});
+      STATE.resources.push({id:Date.now(),name,dept:$('fDept').value,platform:$('fPlat').value.trim(),platform2:$('fPlat2').value.trim(),desig:$('fDesig').value.trim(),doj,exp:parseFloat($('fExp').value)||0,osiYoe:parseFloat($('fOsiYoe').value)||0,beforeOsi:parseFloat($('fBeforeOsi').value)||0,exitDate:exit,remarks:$('fRemarks').value.trim(),utiComments:$('fUtiCmt').value.trim(),replStatus:$('fReplSt').value.trim(),missing:false,uPlan:{...CFG.EP,progress:[]},months});
       showToast('✅ Resource added','ok');
     }
     closeModal('mdResource');
@@ -1437,6 +1488,124 @@ const MODAL={
     if(ex)return;STATE.newMonth=m;
     $$('#mchipCont .mchip:not(.ex)').forEach(c=>c.classList.remove('sel'));
     $('mchipCont').querySelector(`[data-m="${m}"]`).classList.add('sel');
+  },
+  openProgress(id){
+    const r=STATE.resources.find(x=>x.id===id);if(!r)return;
+    this._progId=id;
+    $('mdProgressTitle').textContent=`📝 Progress Log — ${r.name}`;
+    const now=new Date();
+    $('pDate').value=now.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})+' '+now.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    $('pTargetDate').min=now.toISOString().split('T')[0];
+    $('pTargetDate').value='';$('pTargetDate').classList.remove('invalid');
+    $('pComment').value='';
+    // Reset Close Plan button
+    const cb=$('btnClosePlan');
+    cb._confirmed=false;
+    const isCompleted=r.uPlan?.status==='Completed';
+    cb.textContent=isCompleted?'🔄 Reopen Plan':'✅ Close Plan';
+    cb.className=isCompleted?'btn btn-s':'btn btn-s';
+    cb.style.opacity=isCompleted?'0.6':'1';
+    cb.title=isCompleted?'Plan already completed — click to reopen':'Mark this plan as completed';
+    this._renderProgress(r);
+    openModal('mdProgress');
+  },
+  closePlan(){
+    const cb=$('btnClosePlan');
+    const r=STATE.resources.find(x=>x.id===this._progId);if(!r)return;
+    const isCompleted=r.uPlan?.status==='Completed';
+    if(!cb._confirmed){
+      cb._confirmed=true;
+      cb.textContent=isCompleted?'🔄 Click again to reopen':'⚠️ Click again to confirm';
+      cb.className=isCompleted?'btn btn-warn':'btn btn-ok';
+      clearTimeout(cb._timer);
+      cb._timer=setTimeout(()=>{
+        cb.textContent=isCompleted?'🔄 Reopen Plan':'✅ Close Plan';
+        cb.className='btn btn-s';cb._confirmed=false;
+      },4000);
+      return;
+    }
+    clearTimeout(cb._timer);
+    if(!r.uPlan)r.uPlan={...CFG.EP,progress:[]};
+    if(!Array.isArray(r.uPlan.progress))r.uPlan.progress=[];
+    const now=new Date();
+    const dateStr=now.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})+' '+now.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    if(isCompleted){
+      // Reopen
+      r.uPlan.status='In Progress';
+      r.uPlan.progress.push({date:dateStr,comment:'🔄 Plan reopened.',targetDate:null});
+      cb.textContent='✅ Close Plan';cb.className='btn btn-s';
+      showToast(`🔄 Plan reopened for "${r.name}"`,'ok');
+    }else{
+      // Close / complete
+      r.uPlan.status='Completed';
+      r.uPlan.progress.push({date:dateStr,comment:'✅ Plan closed — resource task completed.',targetDate:null});
+      cb.textContent='🔄 Reopen Plan';cb.className='btn btn-s';cb.style.opacity='0.6';
+      showToast(`✅ Plan closed for "${r.name}"`,'ok');
+    }
+    cb._confirmed=false;
+    STORAGE.saveResource(r);
+    this._renderProgress(r);
+    refresh();
+  },
+  _renderProgress(r){
+    const today=new Date();today.setHours(0,0,0,0);
+    const entries=r.uPlan?.progress||[];
+    const el=$('progList');
+    if(!entries.length){el.innerHTML='<div class="prog-empty">No progress entries yet &#8212; add the first one below.</div>';return;}
+    const pid=this._progId;
+    el.innerHTML=entries.map((e,origIdx)=>({...e,origIdx})).reverse().map(e=>{
+      const hasTd=!!e.targetDate;
+      const tdDate=hasTd?new Date(e.targetDate):null;
+      const isOverdue=hasTd&&!isNaN(tdDate)&&tdDate<today&&!e.closed;
+      const cls=e.closed?'prog-entry prog-entry-done':isOverdue?'prog-entry prog-entry-overdue':'prog-entry';
+      const tdLabel=hasTd?`<span class="prog-entry-target" style="color:${isOverdue?'var(--red)':e.closed?'var(--green)':'var(--amb)'}">&#127919; ${e.targetDate}${isOverdue?' &#9888;':''}</span>`:'';
+      const actionBtn=e.closed
+        ?`<span class="badge bg" style="font-size:9px;margin-left:auto;white-space:nowrap">&#9989; Done &middot; ${e.closedDate||''}</span>`
+        :`<button class="btn btn-ok btn-sm" style="margin-left:auto;padding:2px 9px;font-size:10px;white-space:nowrap" onclick="MODAL.markEntryDone(${pid},${e.origIdx})">&#9989; Complete</button>`;
+      return`<div class="${cls}"><div class="prog-entry-hd"><span class="prog-entry-date">&#128197; ${e.date}</span>${tdLabel}${actionBtn}</div><div class="prog-entry-comment">${(e.comment||'').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div></div>`;
+    }).join('');
+  },
+  markEntryDone(id,idx){
+    const r=STATE.resources.find(x=>x.id===id);
+    if(!r||!r.uPlan?.progress?.[idx])return;
+    const entry=r.uPlan.progress[idx];
+    if(entry.closed)return;
+    const now=new Date();
+    entry.closed=true;
+    entry.closedDate=now.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})+' '+now.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    STORAGE.saveResource(r);
+    this._renderProgress(r);
+    refresh();
+    showToast('&#9989; Goal marked as complete','ok');
+  },
+  addProgress(){
+    const r=STATE.resources.find(x=>x.id===this._progId);if(!r)return;
+    const comment=$('pComment').value.trim();
+    if(!comment){showToast('⚠️ Comment is required','warn');$('pComment').focus();return;}
+    // Validate target date — must not be in the past
+    if($('pTargetDate').value){
+      const chosen=new Date($('pTargetDate').value);
+      const today=new Date();today.setHours(0,0,0,0);
+      if(chosen<today){
+        $('pTargetDate').classList.add('invalid');
+        showToast('⚠️ Target date cannot be a past date — please select a future date','warn');
+        $('pTargetDate').focus();return;
+      }
+      $('pTargetDate').classList.remove('invalid');
+    }
+    if(!r.uPlan)r.uPlan={...CFG.EP,progress:[]};
+    if(!Array.isArray(r.uPlan.progress))r.uPlan.progress=[];
+    const now=new Date();
+    r.uPlan.progress.push({
+      date:now.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})+' '+now.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),
+      comment,
+      targetDate:$('pTargetDate').value?fmtDate(new Date($('pTargetDate').value)):null
+    });
+    $('pComment').value='';$('pTargetDate').value='';
+    STORAGE.saveResource(r);
+    this._renderProgress(r);
+    refresh(); // updates planCell in all NB views and dashboard
+    showToast('✅ Progress entry added','ok');
   },
   async confirmMonth(){
     const m=STATE.newMonth;if(!m){showToast('⚠️ Select a month','warn');return;}
@@ -1472,6 +1641,45 @@ const CHARTS={
   }
 };
 
+/* ── NOTIFICATIONS ── */
+function getOverdueEntries(){
+  const today=new Date();today.setHours(0,0,0,0);
+  const list=[];
+  STATE.resources.forEach(r=>{
+    if(!Array.isArray(r.uPlan?.progress))return;
+    r.uPlan.progress.forEach((e,idx)=>{
+      if(e.closed||!e.targetDate)return;
+      const td=new Date(e.targetDate);
+      if(!isNaN(td)&&td<today)list.push({r,e,idx});
+    });
+  });
+  return list;
+}
+function toggleNotifPanel(){
+  const p=$('notifPanel');
+  if(p.style.display==='none'||!p.style.display){renderNotifPanel();p.style.display='';}
+  else p.style.display='none';
+}
+function renderNotifPanel(){
+  const list=getOverdueEntries(),p=$('notifPanel');
+  const hd=`<div class="notif-hd">&#128276; Overdue Progress Targets ${list.length?`<span class="badge br" style="font-size:10px">${list.length}</span>`:''}<button class="notif-close-btn" onclick="$('notifPanel').style.display='none'">&#x2715;</button></div>`;
+  if(!list.length){p.innerHTML=hd+'<div class="notif-empty">&#9989; No overdue targets &#8212; all good!</div>';return;}
+  p.innerHTML=hd+list.map(({r,e})=>`<div class="notif-item" onclick="showView('planning');$('notifPanel').style.display='none'">
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px"><strong style="font-size:12px">${r.name}</strong>${deptTag(r.dept)}<span class="badge br" style="font-size:9px;margin-left:auto">Overdue</span></div>
+    <div style="font-size:11px;color:var(--red);margin-bottom:2px">&#127919; Target was: ${e.targetDate}</div>
+    <div style="font-size:11px;color:var(--g600)">${trunc(e.comment,65)}</div>
+  </div>`).join('');
+}
+
+/* ── KPI NAVIGATION ── */
+function navigateKPI(view, filterId, filterVal){
+  showView(view);
+  if(filterId){
+    const el=$(filterId);
+    if(el){el.value=filterVal!==undefined?filterVal:'';renderView(view);}
+  }
+}
+
 /* ── RENDERERS ── */
 function renderDashboard(){
   const m=activeMonth(),active=activeRes(m);
@@ -1491,18 +1699,18 @@ function renderDashboard(){
   const expConvert=nb.filter(r=>r.uPlan?.status==='In Progress'||r.uPlan?.status==='Planned').length;
 
   $('statsGrid').innerHTML=[
-    {cl:'bl',lb:'Total Resources',v:t,s:'Active this period'},
-    {cl:'gr',lb:'Billable',v:bill.length,s:`${t?(bill.length/t*100).toFixed(1):0}% utilization`},
-    {cl:'re',lb:'Non-Billable',v:nb.length,s:`${t?(nb.length/t*100).toFixed(1):0}% of team`},
-    {cl:'or',lb:'NB · Exp > 2 yrs',v:nbGt2.length,s:'Experienced bench'},
-    {cl:'am',lb:'NB · Exp ≤ 2 yrs',v:nbLt2.length,s:'Junior bench'},
-    {cl:'pu',lb:'Resignations This Month',v:rMo,s:'Current month exits'},
-    {cl:'te',lb:'Resignations This Year',v:rYr,s:`${yr} total exits`},
-    {cl:'re',lb:'NB Without Plan',v:noPlan,s:'Need utilization plan'},
-    {cl:'or',lb:'Critical NB',v:criticalNB,s:'Immediate action required'},
-    {cl:'am',lb:'Planned This Month',v:planThisMo,s:'Target billing date'},
-    {cl:'gr',lb:'Expected Conversions',v:expConvert,s:'In progress + planned'},
-  ].map(s=>`<div class="stat-card ${s.cl}${!hasData?' skeleton':''}"><div class="sl">${s.lb}</div><div class="sv">${s.v}</div><div class="ss">${s.s}</div></div>`).join('');
+    {cl:'bl',lb:'Total Resources',v:t,s:'Active this period',fn:"showView('allResources')"},
+    {cl:'gr',lb:'Billable',v:bill.length,s:`${t?(bill.length/t*100).toFixed(1):0}% utilization`,fn:"showView('billable')"},
+    {cl:'re',lb:'Non-Billable',v:nb.length,s:`${t?(nb.length/t*100).toFixed(1):0}% of team`,fn:"navigateKPI('allResources','fStAll','nb')"},
+    {cl:'or',lb:'NB · Exp > 2 yrs',v:nbGt2.length,s:'Experienced bench',fn:"showView('nbGt2')"},
+    {cl:'am',lb:'NB · Exp ≤ 2 yrs',v:nbLt2.length,s:'Junior bench',fn:"showView('nbLt2')"},
+    {cl:'pu',lb:'Resignations This Month',v:rMo,s:'Current month exits',fn:`navigateKPI('resignations','fResignMo','${curMoLbl}')`},
+    {cl:'te',lb:'Resignations This Year',v:rYr,s:`${yr} total exits`,fn:`navigateKPI('resignations','fResignYr','${yr}')`},
+    {cl:'re',lb:'NB Without Plan',v:noPlan,s:'Need utilization plan',fn:"navigateKPI('planning','fPlanStatus','no-plan')"},
+    {cl:'or',lb:'Critical NB',v:criticalNB,s:'Immediate action required',fn:"navigateKPI('planning','fPlanStatus','Critical')"},
+    {cl:'am',lb:'Planned This Month',v:planThisMo,s:'Target billing date',fn:"showView('planning')"},
+    {cl:'gr',lb:'Expected Conversions',v:expConvert,s:'In progress + planned',fn:"navigateKPI('planning','fPlanStatus','In Progress')"},
+  ].map(s=>`<div class="stat-card ${s.cl}${!hasData?' skeleton':''} kpi-link" onclick="${s.fn}" title="Click to explore"><div class="sl">${s.lb}</div><div class="sv">${s.v}</div><div class="ss">${s.s}</div></div>`).join('');
 
   $('deptGrid').innerHTML=CFG.DEPTS.map(dept=>{
     // Exclude resigned resources — same logic as KPI cards and all other views
@@ -1643,11 +1851,15 @@ function renderResignations(){
   });
 
   $('resignStats').innerHTML=[
-    {cl:'re',lb:'Total Resignations',v:allR.length,s:'All time'},
-    {cl:'or',lb:'This Year',v:allR.filter(r=>r.exitDate.getFullYear()===yr).length,s:String(yr)},
-    {cl:'am',lb:'This Month',v:allR.filter(r=>resignMo(r)===curMo).length,s:'Current month'},
-    {cl:'pu',lb:'Pending Replacement',v:allR.filter(r=>!r.replStatus||r.replStatus.toLowerCase().includes('not started')).length,s:'No replacement yet'}
-  ].map(s=>`<div class="stat-card ${s.cl}"><div class="sl">${s.lb}</div><div class="sv">${s.v}</div><div class="ss">${s.s}</div></div>`).join('');
+    {cl:'re',lb:'Total Resignations',v:allR.length,s:'All time',
+      fn:`$('fResignMo').value='';$('fResignYr').value='';$('fResignDp').value='';PAG.reset('resign');renderResignations()`},
+    {cl:'or',lb:'This Year',v:allR.filter(r=>r.exitDate.getFullYear()===yr).length,s:String(yr),
+      fn:`$('fResignYr').value='${yr}';$('fResignMo').value='';PAG.reset('resign');renderResignations()`},
+    {cl:'am',lb:'This Month',v:allR.filter(r=>resignMo(r)===curMo).length,s:'Current month',
+      fn:`$('fResignMo').value='${curMo}';$('fResignYr').value='';PAG.reset('resign');renderResignations()`},
+    {cl:'pu',lb:'Pending Replacement',v:allR.filter(r=>!r.replStatus||r.replStatus.toLowerCase().includes('not started')).length,s:'No replacement yet',
+      fn:`$('srchResign').value='not started';PAG.reset('resign');renderResignations()`},
+  ].map(s=>`<div class="stat-card ${s.cl} kpi-link" onclick="${s.fn}" title="Click to filter"><div class="sl">${s.lb}</div><div class="sv">${s.v}</div><div class="ss">${s.s}</div></div>`).join('');
 
   const byMo={};allR.forEach(r=>{const l=resignMo(r);if(l)byMo[l]=(byMo[l]||0)+1;});
   const sorted=Object.entries(byMo).sort((a,b)=>m2d(a[0])-m2d(b[0]));
@@ -1680,41 +1892,67 @@ function renderPlanningView(){
   const now=new Date();
   const curMoLbl=now.toLocaleDateString('en-US',{month:'short',year:'numeric'});
 
-  // Stats
   const noPlan=allNB.filter(r=>!r.uPlan?.status).length;
   const critical=allNB.filter(r=>r.uPlan?.status==='Critical').length;
   const planMo=allNB.filter(r=>r.uPlan?.targetDate instanceof Date&&!isNaN(r.uPlan.targetDate)&&r.uPlan.targetDate.toLocaleDateString('en-US',{month:'short',year:'numeric'})===curMoLbl).length;
   const expConvert=allNB.filter(r=>r.uPlan?.status==='In Progress'||r.uPlan?.status==='Planned').length;
+
+  // Clickable KPI cards — filter the planning table inline
   $('planStats').innerHTML=[
-    {cl:'re',lb:'No Utilization Plan',v:noPlan,s:'Need immediate attention'},
-    {cl:'or',lb:'Critical NB Resources',v:critical,s:'Prioritize for placement'},
-    {cl:'am',lb:'Target Date This Month',v:planMo,s:'Billing planned '+curMoLbl},
-    {cl:'gr',lb:'Expected Conversions',v:expConvert,s:'In progress + planned'},
-  ].map(s=>`<div class="stat-card ${s.cl}"><div class="sl">${s.lb}</div><div class="sv">${s.v}</div><div class="ss">${s.s}</div></div>`).join('');
+    {cl:'re',lb:'No Utilization Plan',v:noPlan,s:'Need immediate attention',
+      fn:`$('fPlanStatus').value='no-plan';PAG.reset('planning');renderPlanningView()`},
+    {cl:'or',lb:'Critical NB Resources',v:critical,s:'Prioritize for placement',
+      fn:`$('fPlanStatus').value='Critical';PAG.reset('planning');renderPlanningView()`},
+    {cl:'am',lb:'Target Date This Month',v:planMo,s:'Billing planned '+curMoLbl,
+      fn:`$('fPlanStatus').value='';PAG.reset('planning');renderPlanningView()`},
+    {cl:'gr',lb:'Expected Conversions',v:expConvert,s:'In progress + planned',
+      fn:`$('fPlanStatus').value='In Progress';PAG.reset('planning');renderPlanningView()`},
+  ].map(s=>`<div class="stat-card ${s.cl} kpi-link" onclick="${s.fn}"><div class="sl">${s.lb}</div><div class="sv">${s.v}</div><div class="ss">${s.s}</div></div>`).join('');
 
   let data=allNB.filter(r=>{
     if(fDept&&r.dept!==fDept)return false;
-    if(srch&&!r.name.toLowerCase().includes(srch)&&!String(r.uPlan?.action||'').toLowerCase().includes(srch)&&!String(r.uPlan?.manager||'').toLowerCase().includes(srch))return false;
+    if(srch&&!r.name.toLowerCase().includes(srch)&&!String(r.uPlan?.action||'').toLowerCase().includes(srch))return false;
     if(fStatus==='no-plan'){if(r.uPlan?.status)return false;}
     else if(fStatus&&r.uPlan?.status!==fStatus)return false;
     if(fPri&&r.uPlan?.priority!==fPri)return false;
     return true;
   });
+
   const sl=PAG.slice('planning',data);
   $('planBody').innerHTML=sl.rows.length?sl.rows.map(r=>{
     const p=r.uPlan||{};
+    const entries=p.progress||[];
+    const latest=entries[entries.length-1];
+    const cnt=entries.length;
+
+    // Plan Overview cell — inline editable (status, priority, action, manager)
+
+    // Progress updates cell — latest entry + count
+    const progressCell=`<div style="min-width:190px">
+      ${cnt
+        ?`<div style="display:flex;align-items:center;gap:5px;margin-bottom:4px">
+            <span class="badge bb" style="font-size:9px">${cnt} update${cnt>1?'s':''}</span>
+            <span style="font-size:10px;color:var(--g400)">${latest.date}</span>
+          </div>
+          <div style="font-size:12px;color:var(--g700);line-height:1.45">${trunc(latest.comment,55).replace(/</g,'&lt;')}</div>
+          ${latest.targetDate?`<div style="font-size:10px;color:var(--amb);margin-top:2px">🎯 ${latest.targetDate}</div>`:''}`
+        :`<span style="font-size:11px;color:var(--g500);font-style:italic">No updates yet — click 📝 to add</span>`}
+    </div>`;
+
     return`<tr>
-      <td>${rl(r)}</td><td>${deptTag(r.dept)}</td>
-      <td>${r.exp.toFixed(1)}</td><td>${billBar(bPct(r,m))}</td>
-      <td>${inlineSel(r.id,'status',['','Critical','In Progress','Planned','On Hold','Completed'],p.status||'')}</td>
-      <td>${inlineSel(r.id,'priority',['','High','Medium','Low'],p.priority||'','90px')}</td>
-      <td>${inlineInp(r.id,'action',p.action,'Planned action…','140px')}</td>
-      <td>${inlineDateInp(r.id,'targetDate',p.targetDate)}</td>
-      <td>${inlineInp(r.id,'manager',p.manager,'Manager…','100px')}</td>
-      <td>${inlineDateInp(r.id,'followUpDate',p.followUpDate)}</td>
-      <td><button class="btn btn-s btn-sm" onclick="MODAL.openEdit(${r.id})">✏</button></td>
+      <td>${rl(r)}</td>
+      <td>${deptTag(r.dept)}</td>
+      <td>
+        <div style="font-size:12px;font-weight:600;color:var(--g800)">${r.exp.toFixed(1)} yrs</div>
+        <div style="margin-top:3px">${billBar(bPct(r,m))}</div>
+      </td>
+      <td>${progressCell}</td>
+      <td style="white-space:nowrap;vertical-align:middle">
+        <button class="btn btn-s btn-sm" onclick="MODAL.openEdit(${r.id})" title="Edit plan details">✏</button>
+        <button class="btn btn-p btn-sm" onclick="MODAL.openProgress(${r.id})" title="Progress log" style="margin-left:3px">📝${cnt?` ${cnt}`:''}</button>
+      </td>
     </tr>`;
-  }).join(''):'<tr><td colspan="11" style="text-align:center;padding:32px;color:var(--g400)">No non-billable resources match the selected filters</td></tr>';
+  }).join(''):'<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--g400)">No non-billable resources match the selected filters</td></tr>';
   PAG.render('ftPlan','planning',sl);
 }
 
@@ -1882,8 +2120,10 @@ function updateBadges(){
   $('bdgNbGt2').textContent=nb.filter(r=>r.exp>2).length;
   $('bdgNbLt2').textContent=nb.filter(r=>r.exp<=2).length;
   $('bdgResign').textContent=STATE.resources.filter(r=>isResigned(r)).length;
-  const noPlan=nb.filter(r=>!r.uPlan?.status).length;
-  $('bdgPlan').textContent=noPlan;
+  $('bdgPlan').textContent=nb.filter(r=>!r.uPlan?.status).length;
+  const cnt=getOverdueEntries().length;
+  const b=$('notifBadge');
+  if(b){b.textContent=cnt;b.style.display=cnt?'flex':'none';}
 }
 
 function renderHistSidebar(){
@@ -1926,6 +2166,11 @@ document.addEventListener('DOMContentLoaded',async()=>{
   $('navExport').addEventListener('click',EXPORT.all.bind(EXPORT));
   $('hExport').addEventListener('click',EXPORT.all.bind(EXPORT));
   UPLOAD.init();
+  // Close notification panel when clicking outside
+  document.addEventListener('click',e=>{
+    const p=$('notifPanel'),btn=$('notifBtn');
+    if(p&&btn&&p.style.display!=='none'&&!p.contains(e.target)&&!btn.contains(e.target))p.style.display='none';
+  });
   $$('.modal-overlay').forEach(ov=>ov.addEventListener('click',e=>{if(e.target===ov)ov.classList.remove('open');}));
 });
 </script>
